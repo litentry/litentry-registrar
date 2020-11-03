@@ -20,6 +20,7 @@
     },
     "homepage": "https://github.com/litentry/litentry-registrar#readme",
     "dependencies": {
+        "@polkadot/api": "^2.5.1",
         "body-parser": "^1.19.0",
         "colors": "^1.4.0",
         "dotenv": "^8.2.0",

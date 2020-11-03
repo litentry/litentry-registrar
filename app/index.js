@@ -6,15 +6,16 @@ const bodyParser = require('body-parser');
 
 const config = require('app/config').http;
 const logger = require('app/logger');
-// const MyRouter = require('app/router');
+const MyRouter = require('app/router');
 
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-// MyRouter.AppRouterV1(app);
+
+app.use('/', MyRouter);
 
 /* Listen on port */
 app.listen(config.port);
-/* logging some basic information */
+/* Log some basic information */
 logger.info(`Process ${process.pid} is listening on: ${config.port}`.green);
 logger.info(`NODE_ENV: ${process.env.NODE_ENV}`.green);
