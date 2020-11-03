@@ -1,0 +1,40 @@
+{
+    "name": "litentry-registrar",
+    "version": "1.0.0",
+    "description": "Litentry Polkadot/Kusama Registrar",
+    "main": "index.js",
+    "scripts": {
+        "app": "./node_modules/.bin/nodemon app/index.js",
+        "link": "ln -sf ../app node_modules/app",
+        "lint": "./node_modules/.bin/eslint --fix app",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/litentry/litentry-registrar.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/litentry/litentry-registrar/issues"
+    },
+    "homepage": "https://github.com/litentry/litentry-registrar#readme",
+    "dependencies": {
+        "body-parser": "^1.19.0",
+        "colors": "^1.4.0",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "winston": "^3.3.3",
+        "winston-daily-rotate-file": "^4.5.0"
+    },
+    "devDependencies": {
+        "eslint": "^7.12.1",
+        "husky": "^4.3.0",
+        "nodemon": "^2.0.6"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "eslint ."
+        }
+    }
+}
