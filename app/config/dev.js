@@ -12,7 +12,7 @@ module.exports = Object.freeze({
     emailValidator: {
         callbackEndpoint: 'http://localhost:4000/callback/validation',
         /* send grid */
-        apiKey: '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',
+        apiKey: '',
         // TODO: change to no-reply@litentry.com
         username: 'zongxiong.chen@litentry.com',
         subject: 'Validation From Litentry'
