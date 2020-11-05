@@ -22,10 +22,20 @@ jobs:
 
     - name: npm install, build, and test
       run: |
+        # echo "Current path: "
+        # echo $(pwd)
+        # ls -al .
+        # ls -al ..
+        # ls -al ../..
+        # echo "Before decryption..."
+        # cat app/config/staging.js
+        # sudo apt-get install -y git-crypt
+        # git-crypt unlock ./git-crypt/keys/default
+        # echo "After decryption..."
+        # cat app/config/staging.js
         echo "NODE_ENV=staging" > .env
         mkdir -p ./log/litentry-registrar
         npm install
-        npm run build --if-present
 
     - name: 'Deploy Litentry Registrar to Azure Web App'
       uses: azure/webapps-deploy@v2
@@ -33,4 +43,3 @@ jobs:
         app-name: 'litentry-registrar'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_43fe974a92aa4773a492efc86d47f24f }}
-        # package: .
