@@ -7,7 +7,7 @@
         "app": "ln -sf ../app node_modules/app && ./node_modules/.bin/nodemon app/index.js",
         "link": "ln -sf ../app node_modules/app",
         "lint": "./node_modules/.bin/eslint --fix app",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "start": "ls -al && cat app/config/staging.js && cp staging.js app/config/staging.js && cat app/config/staging.js && rm -f $(pwd)/node_modules/app && ln -sf $(pwd)/app $(pwd)/node_modules/app && node app/index.js"
     },
     "repository": {
         "type": "git",
