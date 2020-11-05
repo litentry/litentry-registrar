@@ -3,6 +3,10 @@
 const TwitterApi = require('twitter');
 const Configs = require('dotenv').config();
 
+if (Configs.error) {
+  throw Configs.error;
+}
+
 const client = new TwitterApi({
   consumer_key: process.env.CONSUMER_KEY,
   consumer_secret: process.env.CONSUMER_SECRET,
@@ -10,12 +14,12 @@ const client = new TwitterApi({
   access_token_secret: process.env.TOKEN_SECRET
 });
 
-const params = {screen_name: 'nodejs'};
+const params = { screen_name: 'nodejs' };
 
-client.get('direct_messages/events/list', params, function(error, msgs, response) {
+client.get('direct_messages/events/list', params, function (error, msgs) {
   if (!error) {
     console.log(msgs.events);
-  }else{
+  } else {
     console.error(error);
   }
 
