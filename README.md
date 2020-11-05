@@ -1,13 +1,12 @@
 # litentry-registrar
 Litentry Polkadot/Kusama Registrar
 
-Install `git-crypt` to decrypted some sensive information, see [https://github.com/AGWA/git-crypt
-](https://github.com/AGWA/git-crypt)
+## Setup development environtment
 
 Install the dependencies
 
 ```
-npm install 
+npm install
 ```
 
 Setup the development environment
@@ -24,14 +23,17 @@ npm run app
 ```
 
 
-Staging Server (CI)
+## Staging Server (CI)
 
+**NOTE: since we don't store sensive information, such password, api-key in the repository, we need to upload configuration staging.js to Azure WebApp Server via FTP manually.**
 
 ```
 https://litentry-registrar.azurewebsites.net
 ```
 
-Useful Links:
+
+
+## Useful Links:
 
 ```
 https://wiki.polkadot.network/docs/en/maintain-networks#westend-test-network
