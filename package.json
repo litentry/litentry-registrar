@@ -28,7 +28,8 @@
         "express": "^4.17.1",
         "jsonwebtoken": "^8.5.1",
         "winston": "^3.3.3",
-        "winston-daily-rotate-file": "^4.5.0"
+        "winston-daily-rotate-file": "^4.5.0",
+        "twitter": "^1.7.1"
     },
     "devDependencies": {
         "eslint": "^7.12.1",
