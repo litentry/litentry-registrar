@@ -10,7 +10,8 @@ npm install .
 Setup the environment
 
 ```
-npm run link
+echo 'NODE_ENV=dev' > ./.env
+mkdir -p ./log/litentry-registrar
 ```
 
 Start the server
