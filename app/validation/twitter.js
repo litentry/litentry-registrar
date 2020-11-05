@@ -10,18 +10,15 @@ const client = new TwitterApi({
   access_token_secret: process.env.TOKEN_SECRET
 });
 
-var params = {screen_name: 'nodejs'};
-client.get('direct_messages/welcome_message/list', params, function(error, tweets, response) {
+const params = {screen_name: 'nodejs'};
+
+client.get('direct_messages/events/list', params, function(error, msgs, response) {
   if (!error) {
-    console.log(response);
+    console.log(msgs.events);
   }else{
     console.error(error);
   }
+
+
 });
-client.get('direct_messages/events/show.json?id=1324362009534734340', params, function(error, tweets, response) {
-  if (!error) {
-    console.log(response);
-  }else{
-    console.error(error);
-  }
-});
+
