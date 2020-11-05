@@ -6,7 +6,10 @@ name: Build and deploy Node.js app to Azure Web App - litentry-registrar
 on:
   push:
     branches:
-      - ci
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build-and-deploy:
@@ -22,17 +25,6 @@ jobs:
 
     - name: npm install, build, and test
       run: |
-        # echo "Current path: "
-        # echo $(pwd)
-        # ls -al .
-        # ls -al ..
-        # ls -al ../..
-        # echo "Before decryption..."
-        # cat app/config/staging.js
-        # sudo apt-get install -y git-crypt
-        # git-crypt unlock ./git-crypt/keys/default
-        # echo "After decryption..."
-        # cat app/config/staging.js
         echo "NODE_ENV=staging" > .env
         mkdir -p ./log/litentry-registrar
         npm install
