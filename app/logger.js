@@ -10,7 +10,7 @@ let logPath = null;
 if (process.env.NODE_ENV == 'dev') {
     logPath = './log/litentry-registrar';
 } else {
-    logPath = '/log/litentry-registrar';
+    logPath = './log/litentry-registrar';
 }
 
 if (! fs.existsSync(logPath)) {
