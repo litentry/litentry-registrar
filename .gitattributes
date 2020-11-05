@@ -1,6 +1,0 @@
-.gitattributes !filter !diff
-.gitignore !filter !diff
-.git/** !filter !diff
-app/config/dev.js filter=git-crypt diff=git-crypt
-app/config/staging.js filter=git-crypt diff=git-crypt
-app/config/production.js filter=git-crypt diff=git-crypt
