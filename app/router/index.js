@@ -52,7 +52,7 @@ async function sendTransaction (toAddr, amount) {
 app.get('/', async(req, res) => {
     // initialise via static create
     try {
-        return res.json({ status: 'success', msg: 'Hello world' });
+        return res.json({ status: 'success', msg: 'Hello world (Just for debug, will be removed in the future).' });
     } catch (error) {
         logger.error(`GET / unexcepected error ${JSON.stringify(error)}`);
         console.trace(error);
