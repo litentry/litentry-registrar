@@ -18,11 +18,15 @@ const params = { screen_name: 'nodejs' };
 
 client.get('direct_messages/events/list', params, function (error, msgs) {
   if (!error) {
-    console.log(msgs.events);
+    console.log(msgs);
   } else {
     console.error(error);
   }
 
+  if(msgs.events) {
+    for(const event of msgs.events) {
+      console.log(event.message_create.message_data.text)
+    }
+  }
 
 });
-
