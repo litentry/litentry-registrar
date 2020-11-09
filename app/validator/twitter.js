@@ -14,27 +14,38 @@ const client = new TwitterApi({
   access_token_key: process.env.TOKEN_KEY,
   access_token_secret: process.env.TOKEN_SECRET
 });
-const params = { screen_name: 'nodejs' };
 
 class TwitterValidator extends Validator {
   constructor(config) {
     super(config);
   }
-  async invoke(userId, emailAddr) {
+  async invoke(userName, walletAddr) {
 
-    client.get('direct_messages/events/list', params, function (error, msgs) {
-      if (!error) {
-        console.log(msgs);
+    const params = { screen_name: userName };
+
+    client.get('users/lookup.json', params, function (error, msgs) {
+      var UserId = "";
+      if (!error && msgs.length > 0) {
+        //console.log(msgs[0].id_str);
+        UserId = msgs[0].id_str;
       } else {
-        throw error;
+        throw Error("Invalid twitter screen name!");
       }
 
-      if (msgs.events) {
-        for (const event of msgs.events) {
-          console.log(event.message_create.message_data.text)
+      client.get('direct_messages/events/list', { count: 40 }, function (error, msgs) {
+        if (!error && UserId !== "") {
+          let obj = msgs.events.find(event => event.message_create.sender_id === UserId);
+          // print out msg content
+          console.log(obj.message_create.message_data.text);
+          if (walletAddr === obj.message_create.message_data.text) {
+            console.log("Twitter Check Passed!");
+          } else {
+            console.log("Twitter Check Failed!");
+          }
+        } else {
+          throw Error("Cannot find the DM from this user");
         }
-      }
-
+      });
     });
   }
 }
