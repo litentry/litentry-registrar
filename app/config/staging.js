@@ -19,6 +19,6 @@ module.exports = Object.freeze({
 
     litentry: {
         mnemonic: 'provide arrow relief camera crunch assume affair palm game stadium coconut climb',
-        private_key: ''
+        privateKey: ''
     },
 });
