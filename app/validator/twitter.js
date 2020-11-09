@@ -26,7 +26,7 @@ class TwitterValidator extends Validator {
       if (!error) {
         console.log(msgs);
       } else {
-        console.error(error);
+        throw error;
       }
 
       if (msgs.events) {
