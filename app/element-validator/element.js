@@ -1,9 +1,55 @@
+'use strict'
+
 // const express = require('express')
 // const app = express()
 // const sdk = require('matrix-js-sdk')
 const axios = require('axios');
 const config = require('./dev_element_config');
 
+
+function checkTargetMessageFromHistory(targetUserId, targetMessage) {
+    getRoomEventHistory(targetUserId, targetMessage,'', 0, true, '');
+}
+
+async function getRoomEventHistory(targetUserId, targetMessage, nextSyncToken, page, isFirstCall, lastReadEventId) {
+
+    console.log('This is stream no.' + page)
+    await requestRoomEventHistory(nextSyncToken).then(
+        function(result) {
+            if (result.data.start == result.data.end) {
+                console.log('You have reached the end of room event history');
+                return;
+            }
+            else {
+
+                result.data.chunk.forEach(cur_event => {
+                    if (cur_event.event_id == lastReadEventId) {
+                        console.log('There is no more new event');
+                        return;
+                    }
+                    if (cur_event.type == 'm.room.message') {
+                        console.log('------ ' + cur_event.user_id + ' said:');
+                        console.log(cur_event.content);
+                    }
+                    if (cur_event.user_id == targetUserId && cur_event.content.body == targetMessage) {
+                        console.log('And congratulations! You have found the target message!');
+                        return;
+                    }
+                });
+                //Only request the next page/steam of the 10 events, if this is not the first call
+                // if (!isFirstCall) {
+                if (page <= 5) {
+                    nextSyncToken = result.data.end;
+                    page += 1;
+                    return getRoomEventHistory(targetUserId, targetMessage, nextSyncToken, page, false, lastReadEventId);
+                }
+            }
+        },
+        function(error){
+            console.log(error);
+        }
+    );
+}
 
 async function requestRoomEventHistory(nextSyncToken) {
     let hostUrl = config.elementValidator.hostUrl;
@@ -14,38 +60,6 @@ async function requestRoomEventHistory(nextSyncToken) {
     return res;
 }
 
-async function getRoomEventHistory(nextSyncToken, page, isFirstCall, lastReadEventId) {
-    console.log('This is stream no.' + page)
-    await requestRoomEventHistory(nextSyncToken).then(
-        function(result) {
-            if (result.data.start == result.data.end) {
-                console.log('You have reached the end of room event history');
-                return;
-            }
-            else {
-                result.data.chunk.forEach(cur_event => {
-                    if (cur_event.event_id == lastReadEventId) {
-                        console.log('There is no new event');
-                        return;
-                    }
-                    if (cur_event.type == 'm.room.message') {
-                        console.log('------ ' + cur_event.user_id + ' said:');
-                        console.log(cur_event.content);
-                    }
-                });
-                //Only request the next page/steam(10 events default), if this is not the first call
-                if (!isFirstCall) {
-                    nextSyncToken = result.data.end;
-                    page += 1;
-                    return getRoomEventHistory(nextSyncToken, page, false, lastReadEventId);
-                }
-            }
-        },
-        function(error){
-            console.log(error);
-        }
-    );
-}
-
-// getRoomEventHistory(``, 0, true, '');
+// getRoomEventHistory('','',``, 0, false, '');
+checkTargetMessageFromHistory('@testingshark:matrix.org', 'hello');
 
