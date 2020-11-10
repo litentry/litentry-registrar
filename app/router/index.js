@@ -104,5 +104,22 @@ app.get('/callback/validation', async(req, res) => {
     }
 });
 
+app.post('/validate/twitter', async(req, res) => {
+    try {
+        const { screenName, walletAddr } = req.body;
+
+        await validator.TwitterValidator.invoke(screenName, walletAddr);
+
+        await sendTransaction(onchainAccount, 12345);
+
+        return res.json({ status: 'success', msg: '' });
+    } catch (error) {
+        logger.error(`POST /validate/email unexcepected error ${JSON.stringify(error)}`);
+        console.trace(error);
+
+        res.status(400);
+        return res.json({ status: 'fail', msg: JSON.stringify(error) });
+    }
+});
 
 module.exports = app;
