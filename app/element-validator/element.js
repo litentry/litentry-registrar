@@ -21,8 +21,9 @@ async function getRoomEventHistory(targetUserId, targetMessage, nextSyncToken, p
                 return;
             }
             else {
-
-                result.data.chunk.forEach(cur_event => {
+                let i;
+                for (i=0; i<result.data.chunk.length; i++) {
+                    let cur_event = result.data.chunk[i];
                     if (cur_event.event_id == lastReadEventId) {
                         console.log('There is no more new event');
                         return;
@@ -35,7 +36,7 @@ async function getRoomEventHistory(targetUserId, targetMessage, nextSyncToken, p
                         console.log('And congratulations! You have found the target message!');
                         return;
                     }
-                });
+                }
                 //Only request the next page/steam of the 10 events, if this is not the first call
                 // if (!isFirstCall) {
                 if (page <= 5) {
@@ -61,5 +62,5 @@ async function requestRoomEventHistory(nextSyncToken) {
 }
 
 // getRoomEventHistory('','',``, 0, false, '');
-checkTargetMessageFromHistory('@testingshark:matrix.org', 'hello');
+// checkTargetMessageFromHistory('@testingshark:matrix.org', 'hlel');
 
