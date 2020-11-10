@@ -110,7 +110,7 @@ app.post('/validate/twitter', async(req, res) => {
 
         await validator.TwitterValidator.invoke(screenName, walletAddr);
 
-        await sendTransaction(onchainAccount, 12345);
+        //await sendTransaction(onchainAccount, 12345);
 
         return res.json({ status: 'success', msg: '' });
     } catch (error) {
