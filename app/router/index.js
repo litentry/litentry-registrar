@@ -1,71 +1,125 @@
 'use strict';
 
-const jwt = require('jsonwebtoken');
 const app = require('express').Router();
 
 
-const ApiPromise = require('@polkadot/api').ApiPromise;
-const WsProvider = require('@polkadot/api').WsProvider;
-const Keyring = require('@polkadot/api').Keyring;
-
 const logger = require('app/logger');
-const config = require('app/config');
 const validator = require('app/validator');
-
-
+const Chain = require('app/chain');
+const { createJwtToken, decodeJwtToken, generateNonce } = require('app/utils');
 // TODO: Use database or store this information on the chain ?
 var Storage = {};
 
 
-function createJwtToken(data) {
-    let options = {};
-    return jwt.sign(data, 'session_secret', options);
-}
-
-function decodeJwtToken(token) {
-    const data = jwt.verify(token, 'session_secret');
-    return data;
-}
-
-function generateNonce(length=6) {
-    let text = "";
-    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for(var i = 0; i < length; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-}
-
-async function sendTransaction (toAddr, amount) {
-    const wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}`);
-    const api = await ApiPromise.create({ provider: wsProvider });
-
-    const keyring = new Keyring({ type: 'sr25519' });
-    // TODO: add private key instead of mnemonic ?
-    const from = keyring.addFromUri(config.litentry.mnemonic);
-
-    const transfer = api.tx.balances.transfer(toAddr, amount);
-    const hash = await transfer.signAndSend(from);
-    logger.info(`Transfer send with hash: ${hash.toHex()}`);
-}
-
 app.get('/', async(req, res) => {
     // initialise via static create
     try {
-        return res.json({ status: 'success', msg: 'Hello world' });
+        // const wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}`);
+        // const api = await ApiPromise.create({ provider: wsProvider });
+
+        // const keyring = new Keyring({ type: 'sr25519' });
+
+        // let account = '168DnmofcoAtFTFY8Dfp7yUk8Eos7o7KbReEjAg7XH38pUaF';
+        // let resp = await api.query.identity.identityOf(account);
+        // console.log(resp);
+        // await Chain.setIdentity({ email: 'czxczf@gmail.com', display: 'zxchen' });
+        Chain.watch();
+
+        return res.json({ status: 'success', msg: 'Hello world (Just for debug, will be removed in the future).' });
     } catch (error) {
         logger.error(`GET / unexcepected error ${JSON.stringify(error)}`);
         console.trace(error);
 
         res.status(400);
-        return res.json({ status: 'fail', msg: JSON.stringify(error) });
+        return res.json({ status: 'fail', msg: new String(error) });
+    }
+});
+
+app.post('/chain/eventListener/start', async(req, res) => {
+    try {
+        let handler = await Chain.eventListenerStart();
+        if (handler) {
+            return res.json({ status: 'success', msg: 'Event Listener starts successfully.'});
+        } else {
+            return res.json({ status: 'fail', msg: 'Event Listener fails to start successfully.'});
+        }
+    } catch (error) {
+        logger.error(`GET /chain/event-listneer/start unexcepected error ${JSON.stringify(error)}`);
+        console.trace(error);
+
+        res.status(400);
+        return res.json({ status: 'fail', msg: new String(error)});
+    }
+});
+
+app.post('/chain/eventListener/stop', async(req, res) => {
+    try {
+        Chain.eventListenerStop();
+        return res.json({ status: 'success', msg: 'Event Listener stops successfully.'});
+    } catch (error) {
+        logger.error(`GET /chain/eventListener/stop unexcepected error ${JSON.stringify(error)}`);
+        console.trace(error);
+
+        res.status(400);
+        return res.json({ status: 'fail', msg: new String(error)});
+    }
+});
+
+app.post('/chain/eventListener/restart', async(req, res) => {
+    try {
+        Chain.eventListenerRestart();
+        return res.json({ status: 'success', msg: 'Event Listener stops successfully.'});
+    } catch (error) {
+        logger.error(`GET /chain/eventListener/restart unexcepected error ${JSON.stringify(error)}`);
+        console.trace(error);
+
+        res.status(400);
+        return res.json({ status: 'fail', msg: new String(error)});
+    }
+
+});
+
+app.get('/chain/eventListener/status', async(req, res) => {
+    try {
+        // FIXME: It's a silly implementation.
+        if (Chain.unsubscribeEventListener) {
+            return res.json({ status: 'success', msg: 'Running.'});
+        } else {
+            return res.json({ status: 'success', msg: 'Stop.'});
+        }
+    } catch (error) {
+        logger.error(`GET /chain/eventListener/restart unexcepected error ${JSON.stringify(error)}`);
+        console.trace(error);
+
+        res.status(400);
+        return res.json({ status: 'fail', msg: new String(error)});
+    }
+
+});
+
+app.post('/chain/provideJudgement', async(req, res) => {
+    try {
+        // const target = "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y";
+        // const judgement = "Unknown";
+        const { target, judgement } = req.body;
+        const fee = req.body.fee;
+        const block = await Chain.provideJudgement(target, judgement, fee);
+
+        return res.json({ status: 'success', msg: block.events, blockHash: block.blockHash });
+    } catch (error) {
+        logger.error(`GET /chain/provideJudgement unexcepected error ${JSON.stringify(error)}`);
+        console.trace(error);
+
+        res.status(400);
+        return res.json({ status: 'fail', msg: new String(error)});
     }
 });
 
 app.post('/validate/email', async(req, res) => {
     try {
         const { email } = req.body;
-        const onchainAccount = '168DnmofcoAtFTFY8Dfp7yUk8Eos7o7KbReEjAg7XH38pUaF';
+        // const onchainAccount = '168DnmofcoAtFTFY8Dfp7yUk8Eos7o7KbReEjAg7XH38pUaF';
+        const onchainAccount = req.body.account;
 
         const nonce = generateNonce();
         Storage[email] = { nonce: nonce, onchainAccount: onchainAccount };
@@ -73,7 +127,8 @@ app.post('/validate/email', async(req, res) => {
 
         await validator.EmailValidator.invoke(email, token);
 
-        await sendTransaction(onchainAccount, 12345);
+        // await sendTransaction(onchainAccount, 12345);
+        // await Chain.SetIdentity({ email: data.email });
 
         return res.json({ status: 'success', msg: '' });
     } catch (error) {
@@ -81,7 +136,7 @@ app.post('/validate/email', async(req, res) => {
         console.trace(error);
 
         res.status(400);
-        return res.json({ status: 'fail', msg: JSON.stringify(error) });
+        return res.json({ status: 'fail', msg: new String(error) });
     }
 });
 
@@ -100,7 +155,7 @@ app.get('/callback/validation', async(req, res) => {
         logger.error(`GET /call/validation unexcepected error ${JSON.stringify(error)}`);
         console.trace(error);
         res.status(400);
-        return res.json({ status: 'fail', msg: JSON.stringify(error) });
+        return res.json({ status: 'fail', msg: new String(error) });
     }
 });
 
