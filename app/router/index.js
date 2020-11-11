@@ -7,24 +7,26 @@ const logger = require('app/logger');
 const validator = require('app/validator');
 const Chain = require('app/chain');
 const { createJwtToken, decodeJwtToken, generateNonce } = require('app/utils');
-// TODO: Use database or store this information on the chain ?
-var Storage = {};
+const { Storage } = require('app/db');
 
 
 app.get('/', async(req, res) => {
-    // initialise via static create
     try {
-        // const wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}`);
-        // const api = await ApiPromise.create({ provider: wsProvider });
+        // const doc = { name: "Red", town: "kanto" };
 
-        // const keyring = new Keyring({ type: 'sr25519' });
+        // let collection = 'requestJudgement';
+        // let id = await Storage.insert(collection, doc);
 
-        // let account = '168DnmofcoAtFTFY8Dfp7yUk8Eos7o7KbReEjAg7XH38pUaF';
-        // let resp = await api.query.identity.identityOf(account);
-        // console.log(resp);
-        // await Chain.setIdentity({ email: 'czxczf@gmail.com', display: 'zxchen' });
-        Chain.watch();
+        // // id = await Storage.insert(collection, doc);
+        // console.log(id);
+        // const _doc = await Storage.query(collection, { _id: id });
+        // console.log(_doc);
 
+        // await Storage.updateById(collection, id, { name: 'Black', LastName: 'Black' });
+
+        // const __doc = await Storage.query(collection, { _id: id });
+        // console.log(__doc);
+        // console.log(Storage.database);
         return res.json({ status: 'success', msg: 'Hello world (Just for debug, will be removed in the future).' });
     } catch (error) {
         logger.error(`GET / unexcepected error ${JSON.stringify(error)}`);
@@ -118,17 +120,12 @@ app.post('/chain/provideJudgement', async(req, res) => {
 app.post('/validate/email', async(req, res) => {
     try {
         const { email } = req.body;
-        // const onchainAccount = '168DnmofcoAtFTFY8Dfp7yUk8Eos7o7KbReEjAg7XH38pUaF';
-        const onchainAccount = req.body.account;
+        // const onchainAccount = req.body.account;
 
         const nonce = generateNonce();
-        Storage[email] = { nonce: nonce, onchainAccount: onchainAccount };
         const token = createJwtToken({ email: email, nonce: nonce });
 
         await validator.EmailValidator.invoke(email, token);
-
-        // await sendTransaction(onchainAccount, 12345);
-        // await Chain.SetIdentity({ email: data.email });
 
         return res.json({ status: 'success', msg: '' });
     } catch (error) {
@@ -144,11 +141,15 @@ app.get('/callback/validation', async(req, res) => {
     try {
         const { token } = req.query;
         const data = decodeJwtToken(token);
-        const { nonce }= Storage[data.email];
+
+        const { nonce } = await Storage.query({ email: data.email });
 
         if (data.nonce == nonce) {
+            await Storage.updateByEmail(data.email, { emailStatus: 'verifiedSuccess' });
+
             return res.json({ status: 'success', msg: ''});
         } else {
+            await Storage.updateByEmail(data.email, { emailStatus: 'verifiedFailed' });
             return res.json({ status: 'fail', msg: ''});
         }
     } catch (error) {

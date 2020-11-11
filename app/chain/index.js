@@ -6,7 +6,7 @@ const ApiPromise = require('@polkadot/api').ApiPromise;
 const WsProvider = require('@polkadot/api').WsProvider;
 const Keyring = require('@polkadot/api').Keyring;
 
-
+const { Storage } = require('app/db');
 const logger = require('app/logger');
 const config = require('app/config');
 const { ValidatorEvent } = require('app/validator/events');
@@ -255,32 +255,32 @@ Event.on('handleRequestJudgement', async (accountID) => {
         let normalizedInfo = { account: accountID };
 
         if (info.display.Raw && info.display.Raw.startsWith('0x')) {
-            normalizedInfo.display = hexToUtf8(info.display.Raw.substring(2))
+            normalizedInfo.display = hexToUtf8(info.display.Raw.substring(2));
         } else {
             normalizedInfo.display = null;
         }
 
         if (info.legal.Raw && info.legal.Raw.startsWith('0x')) {
-            normalizedInfo.legal = hexToUtf8(info.legal.Raw.substring(2))
+            normalizedInfo.legal = hexToUtf8(info.legal.Raw.substring(2));
         } else {
             normalizedInfo.legal = null;
         }
 
         if (info.web.Raw && info.web.Raw.startsWith('0x')) {
-            normalizedInfo.web = hexToUtf8(info.web.Raw.substring(2))
+            normalizedInfo.web = hexToUtf8(info.web.Raw.substring(2));
         } else {
             normalizedInfo.web = null;
         }
 
         if (info.riot.Raw && info.riot.Raw.startsWith('0x')) {
-            normalizedInfo.riot = hexToUtf8(info.riot.Raw.substring(2))
+            normalizedInfo.riot = hexToUtf8(info.riot.Raw.substring(2));
         } else {
             normalizedInfo.riot = null;
         }
 
 
         if (info.email.Raw && info.email.Raw.startsWith('0x')) {
-            normalizedInfo.email = hexToUtf8(info.email.Raw.substring(2))
+            normalizedInfo.email = hexToUtf8(info.email.Raw.substring(2));
         } else {
             normalizedInfo.email = null;
         }
@@ -293,21 +293,24 @@ Event.on('handleRequestJudgement', async (accountID) => {
         // TODO: support pgp finger print
         normalizedInfo.pgpFingerprint = null;
 
-        if (info.image.Raw && info.image.Raw.startsWith('0x')) {
-            normalizedInfo.image = hexToUtf8(info.image.Raw.substring(2))
-        } else {
-            normalizedInfo.image = null;
-        }
+        // if (info.image.Raw && info.image.Raw.startsWith('0x')) {
+        //     normalizedInfo.image = hexToUtf8(info.image.Raw.substring(2));
+        // } else {
+        //     normalizedInfo.image = null;
+        // }
+        normalizedInfo.image = null;
 
         if (info.twitter.Raw && info.twitter.Raw.startsWith('0x')) {
-            normalizedInfo.twitter = hexToUtf8(info.twitter.Raw.substring(2))
+            normalizedInfo.twitter = hexToUtf8(info.twitter.Raw.substring(2));
         } else {
             normalizedInfo.twitter = null;
         }
 
 
         logger.debug(`[Event] normalizedInfo: ${JSON.stringify(normalizedInfo)}`);
-        // TODO: record this event into database for further processing.
+        // Store this request into database
+        await Storage.insert('requestJudgement', normalizedInfo);
+
         if (normalizedInfo.email) {
             ValidatorEvent.emit('handleEmailVerification', normalizedInfo);
         }

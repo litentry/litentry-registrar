@@ -8,6 +8,7 @@ const config = require('app/config');
 const logger = require('app/logger');
 const Validator = require('app/validator/base');
 const { ValidatorEvent } = require('app/validator/events');
+const { Storage } = require('app/db');
 
 const utils = require('app/utils');
 
@@ -43,6 +44,7 @@ ValidatorEvent.on('handleEmailVerification', async (info) => {
     const nonce = utils.generateNonce();
     const token = utils.createJwtToken({ nonce: nonce, account: info.account });
     await validator.invoke(info.email, token);
+    await Storage.updateByEmail(info.email, { emailStatus: 'sent', nonce: nonce });
 });
 
 
