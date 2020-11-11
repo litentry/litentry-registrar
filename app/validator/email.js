@@ -4,8 +4,12 @@ const _ = require('lodash');
 const fs = require('fs');
 const sgMail = require('@sendgrid/mail');
 
+const config = require('app/config');
 const logger = require('app/logger');
 const Validator = require('app/validator/base');
+const { ValidatorEvent } = require('app/validator/events');
+
+const utils = require('app/utils');
 
 
 class EmailValidator extends Validator {
@@ -31,4 +35,16 @@ class EmailValidator extends Validator {
     }
 }
 
-module.exports = EmailValidator;
+const validator = new EmailValidator(config.emailValidator);
+
+
+ValidatorEvent.on('handleEmailVerification', async (info) => {
+    logger.debug(`[ValidatorEvent] handle email verification: ${JSON.stringify(info)}.`);
+    const nonce = utils.generateNonce();
+    const token = utils.createJwtToken({ nonce: nonce, account: info.account });
+    await validator.invoke(info.email, token);
+});
+
+
+
+module.exports = validator;
