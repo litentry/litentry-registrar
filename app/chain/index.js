@@ -10,6 +10,7 @@ const { Storage } = require('app/db');
 const logger = require('app/logger');
 const config = require('app/config');
 const { ValidatorEvent } = require('app/validator/events');
+const { throttle } = require('app/utils');
 
 const EventEmitter = require('events').EventEmitter;
 const Event = new EventEmitter();
@@ -179,7 +180,7 @@ class Chain {
     /**
      * Provide judgement for a target user
      * @param {String} target - an hex string used to represented the target user
-     * @param {String} judgement - judgement for a user, should be one o
+     * @param {String} judgement - judgement for a user, should be one of
      *                 ['Unknown', 'FeePaid', 'Reasonable', 'KnownGood', 'OutOfDate', 'LowQuality]
      */
     async provideJudgement(target, judgement, fee=null) {
@@ -235,14 +236,11 @@ class Chain {
 
 const chain = new Chain(config);
 
-const convert = (from, to) => str => Buffer.from(str, from).toString(to)
+const convert = (from, to) => str => Buffer.from(str, from).toString(to);
 const hexToUtf8 = convert('hex', 'utf8');
 
-/**
- * Event handler for requesting a judgement by clients
- * @param {String} accountID - the accountID to be judged by our platform
- */
-Event.on('handleRequestJudgement', async (accountID) => {
+
+async function handleRequestJudgement(accountID) {
     if (! accountID) {
         return ;
     }
@@ -326,7 +324,15 @@ Event.on('handleRequestJudgement', async (accountID) => {
         logger.error(`Fail to handle judgement request for account ${accountID}, error ${JSON.stringify(error)}`);
         console.trace(error);
     }
+}
 
+/**
+ * Event handler for requesting a judgement by clients
+ * @param {String} accountID - the accountID to be judged by our platform
+ */
+Event.on('handleRequestJudgement', async (accountID) => {
+    const func = throttle(`handlRequestJudgement:${accountID}`, handleRequestJudgement);
+    return await func(accountID);
 });
 
 

@@ -6,8 +6,9 @@ const app = require('express').Router();
 const logger = require('app/logger');
 const validator = require('app/validator');
 const Chain = require('app/chain');
-const { createJwtToken, decodeJwtToken, generateNonce } = require('app/utils');
+const { createJwtToken, decodeJwtToken, generateNonce, throttle } = require('app/utils');
 const { Storage } = require('app/db');
+
 
 
 app.get('/', async(req, res) => {
@@ -27,6 +28,9 @@ app.get('/', async(req, res) => {
         // const __doc = await Storage.query(collection, { _id: id });
         // console.log(__doc);
         // console.log(Storage.database);
+        let test = throttle('hello-world', async (x) => { logger.debug(`Hello world: ${x}`); return 'test' } );
+        let resp = await test('jack');
+        console.log("resp: ", resp);
         return res.json({ status: 'success', msg: 'Hello world (Just for debug, will be removed in the future).' });
     } catch (error) {
         logger.error(`GET / unexcepected error ${JSON.stringify(error)}`);
