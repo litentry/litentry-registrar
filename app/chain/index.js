@@ -6,7 +6,7 @@ const ApiPromise = require('@polkadot/api').ApiPromise;
 const WsProvider = require('@polkadot/api').WsProvider;
 const Keyring = require('@polkadot/api').Keyring;
 
-const { Storage } = require('app/db');
+const { RequestJudgementCollection } = require('app/db');
 const logger = require('app/logger');
 const config = require('app/config');
 const { ValidatorEvent } = require('app/validator/events');
@@ -136,20 +136,42 @@ class Chain {
                 // Extract the phase, event and the event types
                 const { event, phase } = record;
                 const types = event.typeDef;
+                console.log('event.section: ', event.section);
+                console.log('event.method: ', event.method);
 
                 // Show what we are busy with
-                let accountID = null;
-                if (event.section === 'identity' && event.method === 'IdentitySet') {
+                // let accountID = null;
+                let params = {};
+                if (event.section === 'identity' && event.method === 'JudgementRequested') {
                     console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
                     console.log(`\t\t${event.meta.documentation.toString()}`);
 
                     // Loop through each of the parameters, displaying the type and data
                     event.data.forEach((data, index) => {
                         console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
-                        accountID = data.toString();
+                        params[types[index].type] = data.toString();
                     });
+                    // We only need to emit `handleRequestJudgement` event on our own registrar.
+                    if (params['RegistrarIndex'] == this.config.litentry.regIndex) {
+                        Event.emit('handleRequestJudgement', params['AccountId']);
+                    }
+                }
+                // TODO: Should we handle cancelRequestJudgement ?
+                if (event.section === 'identity' && event.method === 'JudgementUnrequested') {
+                    console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+                    console.log(`\t\t${event.meta.documentation.toString()}`);
 
-                    Event.emit('handleRequestJudgement', accountID);
+                    // Loop through each of the parameters, displaying the type and data
+
+                    event.data.forEach((data, index) => {
+                        console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+                        params[types[index].type] = data.toString();
+                    });
+                    // We only need to emit `handleRequestJudgement` event on our own registrar.
+                    console.log(params);
+                    if (params['RegistrarIndex'] == this.config.litentry.regIndex) {
+                        Event.emit('handleUnRequestJudgement', params['AccountId']);
+                    }
                 }
             });
         });
@@ -178,12 +200,35 @@ class Chain {
     }
 
     /**
+     * Check if all related information are verified
+     * @param {String} accountID - a hex-based address
+     * @return {Boolean} return true if it's ready for providing judgement, otherwise, return false
+     */
+    async isReadyForProvideJudgement(accountID) {
+        logger.debug(`[Chain.isReadyForProvideJudgement] check prerequirement for account ${accountID}`);
+        const content = await RequestJudgementCollection.queryByAccount(accountID);
+        if (content.email && content.emailStatus !== 'verifiedSuccess') {
+            return false;
+        }
+        if (content.twitter && content.twitterStatus !== 'verifiedSuccess') {
+            return false;
+        }
+        if (content.riot && content.riotStatus !== 'verifiedSuccess') {
+            return false;
+        }
+        return true;
+    }
+    /**
      * Provide judgement for a target user
      * @param {String} target - an hex string used to represented the target user
      * @param {String} judgement - judgement for a user, should be one of
      *                 ['Unknown', 'FeePaid', 'Reasonable', 'KnownGood', 'OutOfDate', 'LowQuality]
      */
     async provideJudgement(target, judgement, fee=null) {
+        if (! await this.isReadyForProvideJudgement(target)) {
+            throw new Error('Not all information are verified.');
+        }
+
         await this.connect();
 
         const regIndex = this.config.litentry.regIndex;
@@ -304,10 +349,9 @@ async function handleRequestJudgement(accountID) {
             normalizedInfo.twitter = null;
         }
 
-
         logger.debug(`[Event] normalizedInfo: ${JSON.stringify(normalizedInfo)}`);
         // Store this request into database
-        await Storage.insert('requestJudgement', normalizedInfo);
+        await RequestJudgementCollection.insert(normalizedInfo);
 
         if (normalizedInfo.email) {
             ValidatorEvent.emit('handleEmailVerification', normalizedInfo);

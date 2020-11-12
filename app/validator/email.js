@@ -8,7 +8,7 @@ const config = require('app/config');
 const logger = require('app/logger');
 const Validator = require('app/validator/base');
 const { ValidatorEvent } = require('app/validator/events');
-const { Storage } = require('app/db');
+const { RequestJudgementCollection } = require('app/db');
 
 const utils = require('app/utils');
 
@@ -42,9 +42,9 @@ const validator = new EmailValidator(config.emailValidator);
 ValidatorEvent.on('handleEmailVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle email verification: ${JSON.stringify(info)}.`);
     const nonce = utils.generateNonce();
-    const token = utils.createJwtToken({ nonce: nonce, account: info.account });
+    const token = utils.createJwtToken({ nonce: nonce, account: info.account, email: info.email });
     await validator.invoke(info.email, token);
-    await Storage.updateByEmail(info.email, { emailStatus: 'sent', nonce: nonce });
+    await RequestJudgementCollection.setEmailVerifiedPending(info.account, info.email, { nonce: nonce });
 });
 
 
