@@ -6,31 +6,13 @@ const app = require('express').Router();
 const logger = require('app/logger');
 const validator = require('app/validator');
 const Chain = require('app/chain');
-const { createJwtToken, decodeJwtToken, generateNonce, throttle } = require('app/utils');
-const { Storage } = require('app/db');
+const { createJwtToken, decodeJwtToken, generateNonce } = require('app/utils');
+const { RequestJudgementCollection } = require('app/db');
 
 
 
 app.get('/', async(req, res) => {
     try {
-        // const doc = { name: "Red", town: "kanto" };
-
-        // let collection = 'requestJudgement';
-        // let id = await Storage.insert(collection, doc);
-
-        // // id = await Storage.insert(collection, doc);
-        // console.log(id);
-        // const _doc = await Storage.query(collection, { _id: id });
-        // console.log(_doc);
-
-        // await Storage.updateById(collection, id, { name: 'Black', LastName: 'Black' });
-
-        // const __doc = await Storage.query(collection, { _id: id });
-        // console.log(__doc);
-        // console.log(Storage.database);
-        let test = throttle('hello-world', async (x) => { logger.debug(`Hello world: ${x}`); return 'test' } );
-        let resp = await test('jack');
-        console.log("resp: ", resp);
         return res.json({ status: 'success', msg: 'Hello world (Just for debug, will be removed in the future).' });
     } catch (error) {
         logger.error(`GET / unexcepected error ${JSON.stringify(error)}`);
@@ -105,8 +87,6 @@ app.get('/chain/eventListener/status', async(req, res) => {
 
 app.post('/chain/provideJudgement', async(req, res) => {
     try {
-        // const target = "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y";
-        // const judgement = "Unknown";
         const { target, judgement } = req.body;
         const fee = req.body.fee;
         const block = await Chain.provideJudgement(target, judgement, fee);
@@ -124,7 +104,6 @@ app.post('/chain/provideJudgement', async(req, res) => {
 app.post('/validate/email', async(req, res) => {
     try {
         const { email } = req.body;
-        // const onchainAccount = req.body.account;
 
         const nonce = generateNonce();
         const token = createJwtToken({ email: email, nonce: nonce });
@@ -145,15 +124,14 @@ app.get('/callback/validation', async(req, res) => {
     try {
         const { token } = req.query;
         const data = decodeJwtToken(token);
+        console.log(data);
 
-        const { nonce } = await Storage.query({ email: data.email });
-
+        const { nonce } = await RequestJudgementCollection.query({ email: data.email, account: data.account, emailStatus: { $ne: 'verifiedSuccess' }});
         if (data.nonce == nonce) {
-            await Storage.updateByEmail(data.email, { emailStatus: 'verifiedSuccess' });
-
+            await RequestJudgementCollection.setEmailVerifiedSuccess(data.account, data.email);
             return res.json({ status: 'success', msg: ''});
         } else {
-            await Storage.updateByEmail(data.email, { emailStatus: 'verifiedFailed' });
+            await RequestJudgementCollection.setEmailVerifiedFailed(data.account, data.email);
             return res.json({ status: 'fail', msg: ''});
         }
     } catch (error) {
