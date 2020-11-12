@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const LRU = require("lru-cache");
 
 const logger = require('app/logger');
+const config = require('app/config');
 
 
 function createJwtToken(data) {
@@ -26,8 +27,8 @@ function generateNonce(length=6) {
 }
 
 
-const waitingTime = 10 * 1000; // 100 seconds
-const funcCacheSize = 100;
+const waitingTime = config.requestJudgementInterval || 60 * 1000; // 60 seconds
+const funcCacheSize = 4096;
 var FunctionCache = new LRU(funcCacheSize);
 
 /**
