@@ -18,4 +18,4 @@ ssh $USER@$STAGING_SERVER "cd $TARGET_DIR && \
     echo NODE_ENV=staging > $TARGET_DIR/.env && \
     npm install && \
     npm run link && \
-    npm run app"
+    npm start &> /dev/null"
