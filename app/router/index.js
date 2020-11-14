@@ -14,17 +14,6 @@ var Storage = {};
 app.get('/', async(req, res) => {
     // initialise via static create
     try {
-        // const wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}`);
-        // const api = await ApiPromise.create({ provider: wsProvider });
-
-        // const keyring = new Keyring({ type: 'sr25519' });
-
-        // let account = '168DnmofcoAtFTFY8Dfp7yUk8Eos7o7KbReEjAg7XH38pUaF';
-        // let resp = await api.query.identity.identityOf(account);
-        // console.log(resp);
-        // await Chain.setIdentity({ email: 'czxczf@gmail.com', display: 'zxchen' });
-        Chain.blockWatcher();
-
         return res.json({ status: 'success', msg: 'Hello world (Just for debug, will be removed in the future).' });
     } catch (error) {
         logger.error(`GET / unexcepected error ${JSON.stringify(error)}`);
