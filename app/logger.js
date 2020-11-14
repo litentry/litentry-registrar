@@ -10,7 +10,7 @@ let logPath = null;
 if (process.env.NODE_ENV == 'dev') {
     logPath = './log/litentry-registrar';
 } else {
-    logPath = './log/litentry-registrar';
+    logPath = '/var/log/litentry';
 }
 
 if (! fs.existsSync(logPath)) {
@@ -24,7 +24,7 @@ const myFormat = printf(({ level, message, timestamp }) => {
 const transports = [
     new DailyRotateFile({
         level: 'info',
-        filename: `${logPath}/baymax-info-%DATE%.log`,
+        filename: `${logPath}/info-%DATE%.log`,
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: '2048m',
@@ -32,7 +32,7 @@ const transports = [
     }),
     new DailyRotateFile({
         level: 'error',
-        filename: `${logPath}/baymax-error-%DATE%.log`,
+        filename: `${logPath}/error-%DATE%.log`,
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: '2048m',
