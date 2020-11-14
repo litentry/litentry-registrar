@@ -3,75 +3,53 @@ Litentry Polkadot/Kusama Registrar
 
 ## Setup development environtment
 
-Install the dependencies
+- Install `git-crypt`, useful commands for `git-crypt` (maybe `git crypt` on some different platforms)
+	
+	```
+	git-crypt lock -k /path/to/key
+	git-crypt unlock /path/to/key
+	git-crypt status
+	git-crypt status -f
+	```
+	
+	See [git-crypt](https://github.com/AGWA/git-crypt) for details
 
-```
-npm install
-```
+- Install node packages dependencies
 
-Setup the development environment
+	```
+	npm install
+	```
 
-```
-echo 'NODE_ENV=dev' > ./.env
-mkdir -p ./log/litentry-registrar
-```
+- Setup the development environment
 
-Start the development server
+	```
+	echo 'NODE_ENV=dev' > ./.env
+	mkdir -p ./log/litentry-registrar
+	```
 
-```
-npm run app
-```
+- Start the development server
 
-## Example configuration
-```
-'use strict';
-
-module.exports = Object.freeze({
-    http: {
-        port: 8080,
-        address: '0.0.0.0',
-    },
-    chain: {
-        // protocol: 'wss',
-        // provider: 'westend-rpc.polkadot.io'
-        // port: 443
-        protocol: 'ws',
-        provider: '127.0.0.1',
-        port: 9944
-    },
-    emailValidator: {
-        callbackEndpoint: 'http://localhost:8080/callback/validation',
-        /* send grid */
-        apiKey: '',
-        username: 'no-reply@litentry.com',
-        subject: 'Validation From Litentry'
-    },
-
-    litentry: {
-        // mnemonic: '',
-        // private_key: '',
-        defaultAccount: '//Alice',
-        regIndex: 0
-    },
-    mongodb: {
-        host: 'localhost',
-        port: 27017,
-        dbName: 'litentry',
-        username: '',
-        password: ''
-    }
-});
-```
+	```
+	npm run app 
+	```
+	or 
+	
+	```
+	npm start
+	```
+	
 
 ## Staging Server (CI)
 
-**NOTE: since we don't store sensive information, such password, api-key in the repository, we need to upload configuration staging.js to Azure WebApp Server via FTP manually.**
-
 ```
-https://litentry-registrar.azurewebsites.net
+http://ec2-13-229-136-206.ap-southeast-1.compute.amazonaws.com:8080
 ```
 
-
+## Chain Address 
+```
+wss://13.229.136.206
+ws://13.229.136.206:9944
+```
 
 ## Useful Links:
 
