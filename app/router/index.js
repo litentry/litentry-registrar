@@ -23,7 +23,7 @@ app.get('/', async(req, res) => {
         // let resp = await api.query.identity.identityOf(account);
         // console.log(resp);
         // await Chain.setIdentity({ email: 'czxczf@gmail.com', display: 'zxchen' });
-        Chain.watch();
+        Chain.blockWatcher();
 
         return res.json({ status: 'success', msg: 'Hello world (Just for debug, will be removed in the future).' });
     } catch (error) {
