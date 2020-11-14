@@ -109,6 +109,7 @@ class Chain {
     }
 
     async blockWatcher() {
+        await this.connect();
         const unsubscribeBlockerWatcher = await this.api.rpc.chain.subscribeNewHeads(async (header) => {
             console.log(`Chain is at block: #${header.number}`);
         });

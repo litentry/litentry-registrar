@@ -1,0 +1,26 @@
+branches:
+  only:
+    - master
+language: node_js
+node_js:
+  - 14
+cache:
+  npm: false
+install:
+  - echo "No need to install dependencies"
+before_script:
+  - echo -e "Host $STAGING_SERVER\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+script:
+  - echo "No tests yet"
+addons:
+  ssh_known_hosts:
+    - "$STAGING_SERVER"
+before_deploy:
+  - openssl aes-256-cbc -K $encrypted_4a9a417912ae_key -iv $encrypted_4a9a417912ae_iv -in .github/workflows/travis_litentry.enc -out /tmp/id_rsa -d
+  - eval "$(ssh-agent -s)"
+  - chmod 400 /tmp/id_rsa
+  - ssh-add /tmp/id_rsa
+deploy:
+  - provider: script
+    cleanup: false
+    script: sh .github/workflows/deploy.sh
