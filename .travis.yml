@@ -7,7 +7,6 @@ install:
   - echo "No need to install dependencies"
 before_script:
   - echo -e "Host $STAGING_SERVER\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-  - cat ~/.ssh/config
 script:
   - echo "No tests yet"
 addons:
