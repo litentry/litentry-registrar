@@ -1,4 +1,6 @@
 # litentry-registrar
+[![Build Status](https://travis-ci.org/litentry/litentry-registrar.svg?branch=master)](https://travis-ci.org/litentry/litentry-registrar)
+
 Litentry Polkadot/Kusama Registrar
 
 ## Setup development environtment
