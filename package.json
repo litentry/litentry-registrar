@@ -7,7 +7,7 @@
         "app": "./node_modules/.bin/nodemon app/index.js",
         "link": "ln -sf ../app node_modules/app",
         "lint": "./node_modules/.bin/eslint --fix app",
-        "start": "pm2 start app"
+        "start": "pm2 restart app"
     },
     "repository": {
         "type": "git",
