@@ -6,10 +6,11 @@ const ApiPromise = require('@polkadot/api').ApiPromise;
 const WsProvider = require('@polkadot/api').WsProvider;
 const Keyring = require('@polkadot/api').Keyring;
 
-
+const { RequestJudgementCollection } = require('app/db');
 const logger = require('app/logger');
 const config = require('app/config');
 const { ValidatorEvent } = require('app/validator/events');
+const { throttle } = require('app/utils');
 
 const EventEmitter = require('events').EventEmitter;
 const Event = new EventEmitter();
@@ -136,20 +137,42 @@ class Chain {
                 // Extract the phase, event and the event types
                 const { event, phase } = record;
                 const types = event.typeDef;
+                console.log('event.section: ', event.section);
+                console.log('event.method: ', event.method);
 
                 // Show what we are busy with
-                let accountID = null;
-                if (event.section === 'identity' && event.method === 'IdentitySet') {
+                // let accountID = null;
+                let params = {};
+                if (event.section === 'identity' && event.method === 'JudgementRequested') {
                     console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
                     console.log(`\t\t${event.meta.documentation.toString()}`);
 
                     // Loop through each of the parameters, displaying the type and data
                     event.data.forEach((data, index) => {
                         console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
-                        accountID = data.toString();
+                        params[types[index].type] = data.toString();
                     });
+                    // We only need to emit `handleRequestJudgement` event on our own registrar.
+                    if (params['RegistrarIndex'] == this.config.litentry.regIndex) {
+                        Event.emit('handleRequestJudgement', params['AccountId']);
+                    }
+                }
+                // TODO: Should we handle cancelRequestJudgement ?
+                if (event.section === 'identity' && event.method === 'JudgementUnrequested') {
+                    console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+                    console.log(`\t\t${event.meta.documentation.toString()}`);
 
-                    Event.emit('handleRequestJudgement', accountID);
+                    // Loop through each of the parameters, displaying the type and data
+
+                    event.data.forEach((data, index) => {
+                        console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+                        params[types[index].type] = data.toString();
+                    });
+                    // We only need to emit `handleRequestJudgement` event on our own registrar.
+                    console.log(params);
+                    if (params['RegistrarIndex'] == this.config.litentry.regIndex) {
+                        Event.emit('handleUnRequestJudgement', params['AccountId']);
+                    }
                 }
             });
         });
@@ -178,12 +201,35 @@ class Chain {
     }
 
     /**
+     * Check if all related information are verified
+     * @param {String} accountID - a hex-based address
+     * @return {Boolean} return true if it's ready for providing judgement, otherwise, return false
+     */
+    async isReadyForProvideJudgement(accountID) {
+        logger.debug(`[Chain.isReadyForProvideJudgement] check prerequirement for account ${accountID}`);
+        const content = await RequestJudgementCollection.queryByAccount(accountID);
+        if (content.email && content.emailStatus !== 'verifiedSuccess') {
+            return false;
+        }
+        if (content.twitter && content.twitterStatus !== 'verifiedSuccess') {
+            return false;
+        }
+        if (content.riot && content.riotStatus !== 'verifiedSuccess') {
+            return false;
+        }
+        return true;
+    }
+    /**
      * Provide judgement for a target user
      * @param {String} target - an hex string used to represented the target user
-     * @param {String} judgement - judgement for a user, should be one o
+     * @param {String} judgement - judgement for a user, should be one of
      *                 ['Unknown', 'FeePaid', 'Reasonable', 'KnownGood', 'OutOfDate', 'LowQuality]
      */
     async provideJudgement(target, judgement, fee=null) {
+        if (! await this.isReadyForProvideJudgement(target)) {
+            throw new Error('Not all information are verified.');
+        }
+
         await this.connect();
 
         const regIndex = this.config.litentry.regIndex;
@@ -236,14 +282,11 @@ class Chain {
 
 const chain = new Chain(config);
 
-const convert = (from, to) => str => Buffer.from(str, from).toString(to)
+const convert = (from, to) => str => Buffer.from(str, from).toString(to);
 const hexToUtf8 = convert('hex', 'utf8');
 
-/**
- * Event handler for requesting a judgement by clients
- * @param {String} accountID - the accountID to be judged by our platform
- */
-Event.on('handleRequestJudgement', async (accountID) => {
+
+async function handleRequestJudgement(accountID) {
     if (! accountID) {
         return ;
     }
@@ -256,32 +299,32 @@ Event.on('handleRequestJudgement', async (accountID) => {
         let normalizedInfo = { account: accountID };
 
         if (info.display.Raw && info.display.Raw.startsWith('0x')) {
-            normalizedInfo.display = hexToUtf8(info.display.Raw.substring(2))
+            normalizedInfo.display = hexToUtf8(info.display.Raw.substring(2));
         } else {
             normalizedInfo.display = null;
         }
 
         if (info.legal.Raw && info.legal.Raw.startsWith('0x')) {
-            normalizedInfo.legal = hexToUtf8(info.legal.Raw.substring(2))
+            normalizedInfo.legal = hexToUtf8(info.legal.Raw.substring(2));
         } else {
             normalizedInfo.legal = null;
         }
 
         if (info.web.Raw && info.web.Raw.startsWith('0x')) {
-            normalizedInfo.web = hexToUtf8(info.web.Raw.substring(2))
+            normalizedInfo.web = hexToUtf8(info.web.Raw.substring(2));
         } else {
             normalizedInfo.web = null;
         }
 
         if (info.riot.Raw && info.riot.Raw.startsWith('0x')) {
-            normalizedInfo.riot = hexToUtf8(info.riot.Raw.substring(2))
+            normalizedInfo.riot = hexToUtf8(info.riot.Raw.substring(2));
         } else {
             normalizedInfo.riot = null;
         }
 
 
         if (info.email.Raw && info.email.Raw.startsWith('0x')) {
-            normalizedInfo.email = hexToUtf8(info.email.Raw.substring(2))
+            normalizedInfo.email = hexToUtf8(info.email.Raw.substring(2));
         } else {
             normalizedInfo.email = null;
         }
@@ -294,21 +337,23 @@ Event.on('handleRequestJudgement', async (accountID) => {
         // TODO: support pgp finger print
         normalizedInfo.pgpFingerprint = null;
 
-        if (info.image.Raw && info.image.Raw.startsWith('0x')) {
-            normalizedInfo.image = hexToUtf8(info.image.Raw.substring(2))
-        } else {
-            normalizedInfo.image = null;
-        }
+        // if (info.image.Raw && info.image.Raw.startsWith('0x')) {
+        //     normalizedInfo.image = hexToUtf8(info.image.Raw.substring(2));
+        // } else {
+        //     normalizedInfo.image = null;
+        // }
+        normalizedInfo.image = null;
 
         if (info.twitter.Raw && info.twitter.Raw.startsWith('0x')) {
-            normalizedInfo.twitter = hexToUtf8(info.twitter.Raw.substring(2))
+            normalizedInfo.twitter = hexToUtf8(info.twitter.Raw.substring(2));
         } else {
             normalizedInfo.twitter = null;
         }
 
-
         logger.debug(`[Event] normalizedInfo: ${JSON.stringify(normalizedInfo)}`);
-        // TODO: record this event into database for further processing.
+        // Store this request into database
+        await RequestJudgementCollection.insert(normalizedInfo);
+
         if (normalizedInfo.email) {
             ValidatorEvent.emit('handleEmailVerification', normalizedInfo);
         }
@@ -324,7 +369,15 @@ Event.on('handleRequestJudgement', async (accountID) => {
         logger.error(`Fail to handle judgement request for account ${accountID}, error ${JSON.stringify(error)}`);
         console.trace(error);
     }
+}
 
+/**
+ * Event handler for requesting a judgement by clients
+ * @param {String} accountID - the accountID to be judged by our platform
+ */
+Event.on('handleRequestJudgement', async (accountID) => {
+    const func = throttle(`handlRequestJudgement:${accountID}`, handleRequestJudgement);
+    return await func(accountID);
 });
 
 

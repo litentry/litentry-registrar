@@ -53,6 +53,13 @@ module.exports = Object.freeze({
         defaultAccount: '//Alice',
         regIndex: 0
     },
+    mongodb: {
+        host: 'localhost',
+        port: 27017,
+        dbName: 'litentry',
+        username: '',
+        password: ''
+    }
 });
 ```
 

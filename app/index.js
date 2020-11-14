@@ -5,6 +5,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const config = require('app/config').http;
+const Chain = require('app/chain');
 const logger = require('app/logger');
 const MyRouter = require('app/router');
 
@@ -19,3 +20,7 @@ app.listen(config.port);
 /* Log some basic information */
 logger.info(`Process ${process.pid} is listening on: ${config.port}`.green);
 logger.info(`NODE_ENV: ${process.env.NODE_ENV}`.green);
+/* Start chain event listener */
+(async () => {
+    await Chain.eventListenerStart();
+})();
