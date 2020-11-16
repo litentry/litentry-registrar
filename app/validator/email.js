@@ -1,20 +1,30 @@
 'use strict';
 
+const _ = require('lodash');
+const fs = require('fs');
 const sgMail = require('@sendgrid/mail');
 
+const config = require('app/config');
 const logger = require('app/logger');
 const Validator = require('app/validator/base');
+const { ValidatorEvent } = require('app/validator/events');
+const { RequestJudgementCollection } = require('app/db');
+
+const utils = require('app/utils');
 
 
 class EmailValidator extends Validator {
     constructor(config) {
         super(config);
+        const templateString = fs.readFileSync(`${__dirname}/templates/email.tpl`, 'utf8');
+        this.template = _.template(templateString);
     }
 
     async invoke(toAddr, text) {
-        // TODO: customize msg
-        let html = `<b>${this.config.callbackEndpoint}?token=${text}</b>`;
+        const confirmationAddress = `${this.config.callbackEndpoint}?token=${text}`;
+        const html = this.template({ confirmationAddress: confirmationAddress });
         sgMail.setApiKey(this.config.apiKey);
+
         const msg = {
             to: toAddr,
             from: this.config.username, // Use the email address or domain you verified above
@@ -26,4 +36,17 @@ class EmailValidator extends Validator {
     }
 }
 
-module.exports = EmailValidator;
+const validator = new EmailValidator(config.emailValidator);
+
+
+ValidatorEvent.on('handleEmailVerification', async (info) => {
+    logger.debug(`[ValidatorEvent] handle email verification: ${JSON.stringify(info)}.`);
+    const nonce = utils.generateNonce();
+    const token = utils.createJwtToken({ nonce: nonce, account: info.account, email: info.email });
+    await validator.invoke(info.email, token);
+    await RequestJudgementCollection.setEmailVerifiedPending(info.account, info.email, { nonce: nonce });
+});
+
+
+
+module.exports = validator;

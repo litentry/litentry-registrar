@@ -1,37 +1,57 @@
 # litentry-registrar
+[![Build Status](https://travis-ci.com/litentry/litentry-registrar.svg?branch=master)](https://travis-ci.com/litentry/litentry-registrar)
+
 Litentry Polkadot/Kusama Registrar
 
 ## Setup development environtment
 
-Install the dependencies
+- Install `git-crypt`, useful commands for `git-crypt` (maybe `git crypt` on some different platforms)
 
-```
-npm install
-```
+    ```
+    git-crypt lock -k /path/to/key
+    git-crypt unlock /path/to/key
+    git-crypt status
+    git-crypt status -f
+    ```
 
-Setup the development environment
+    See [git-crypt](https://github.com/AGWA/git-crypt) for details
 
-```
-echo 'NODE_ENV=dev' > ./.env
-mkdir -p ./log/litentry-registrar
-```
+- Install node packages dependencies
 
-Start the development server
+    ```
+    npm install
+    ```
 
-```
-npm run app
-```
+- Setup the development environment
+
+    ```
+    echo 'NODE_ENV=dev' > ./.env
+    mkdir -p ./log/litentry-registrar
+    ```
+
+- Start the development server
+
+    ```
+    npm run app
+    ```
+    or
+
+    ```
+    npm start
+    ```
 
 
 ## Staging Server (CI)
 
-**NOTE: since we don't store sensive information, such password, api-key in the repository, we need to upload configuration staging.js to Azure WebApp Server via FTP manually.**
-
 ```
-https://litentry-registrar.azurewebsites.net
+http://ec2-13-229-136-206.ap-southeast-1.compute.amazonaws.com:8080
 ```
 
-
+## Chain Address
+```
+wss://13.229.136.206
+ws://13.229.136.206:9944
+```
 
 ## Useful Links:
 
