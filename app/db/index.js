@@ -1,12 +1,9 @@
-'use strict';
-
 const _ = require('lodash');
 const MongoClient = require('mongodb').MongoClient;
 const { ObjectId } = require('mongodb');
 
 const config = require('app/config').mongodb;
 const logger = require('app/logger');
-
 
 class MongodbStorage {
     constructor(config) {
@@ -23,7 +20,7 @@ class MongodbStorage {
     async connect() {
         if (this.client) {
             logger.debug(`[MongodbStorage.connect] storage is already connected.`);
-            return ;
+            return;
         }
 
         let endpoint = '';
@@ -75,7 +72,9 @@ class MongodbStorage {
         await this.connect();
         const _collection = this.database.collection(collection);
         const result = await _collection.insertOne({ ...content, createdAt: new Date(), updatedAt: new Date() });
-        logger.debug(`[MongodbStorage.insert] insert ${result.insertedCount} document into ${collection}, insertedId is: ${result.insertedId}`);
+        logger.debug(
+            `[MongodbStorage.insert] insert ${result.insertedCount} document into ${collection}, insertedId is: ${result.insertedId}`
+        );
         return result.insertedId;
     }
 
@@ -125,7 +124,7 @@ class RequestJudgementCollection {
         return await this.query(this.collectionName, { account: account });
     }
 
-    async setEmailVerifiedPendingById(id, addition={}) {
+    async setEmailVerifiedPendingById(id, addition = {}) {
         const filter = { _id: id };
         const content = { emailStatus: 'pending', ...addition };
         return await this.db.update(this.collectionName, filter, content);
@@ -135,7 +134,6 @@ class RequestJudgementCollection {
         const filter = { _id: id };
         const content = { emailStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
-
     }
 
     async setEmailVerifiedFailedById(id) {
@@ -170,15 +168,14 @@ class RequestJudgementCollection {
         /* The account is still not verified, we can set it to be canceled  */
         const _collection = this.db.database.collection(this.collectionName);
         const results = await _collection.updateMany(
-                                                     { account: account,
-                                                       $and: [ { status: { $ne: 'verifiedSuccess' } },
-                                                           { status: { $ne: 'canceled' } }]},
-                                                 { $set: { status: 'canceled' } });
+            { account: account, $and: [{ status: { $ne: 'verifiedSuccess' } }, { status: { $ne: 'canceled' } }] },
+            { $set: { status: 'canceled' } }
+        );
         logger.debug(`[MongodbStorage.update] update ${results.modifiedCount} document into ${this.collectionName}`);
     }
 }
 
-if (! config) {
+if (!config) {
     throw new Error('Add configuration for mongodb.');
 }
 
@@ -186,5 +183,5 @@ const storage = new MongodbStorage(config);
 
 module.exports = {
     Storage: storage,
-    RequestJudgementCollection: new RequestJudgementCollection(storage)
+    RequestJudgementCollection: new RequestJudgementCollection(storage),
 };

@@ -15,19 +15,18 @@ const { throttle } = require('app/utils');
 const EventEmitter = require('events').EventEmitter;
 const Event = new EventEmitter();
 
-var Judgement = {
+const Judgement = {
     FeePaid: {
         // value like: 100 DOT
-        FeePaid: null
+        FeePaid: null,
     },
 
     Unknown: { Unknown: null },
     Reasonable: { Reasonable: null },
     KnownGood: { KnownGood: null },
     OutOfDate: { OutOfDate: null },
-    LowQuality: { LowQuality: null }
-}
-
+    LowQuality: { LowQuality: null },
+};
 
 class Chain {
     /**
@@ -55,12 +54,12 @@ class Chain {
      */
     async connect() {
         this.api = await ApiPromise.create({ provider: this.wsProvider });
-        if (! this.myself) {
+        if (!this.myself) {
             if (config.litentry.privateKey) {
-                logger.debug("Use private key");
+                logger.debug('Use private key');
                 this.myself = this.keyring.addFromUri(config.litentry.privateKey);
             } else if (config.litentry.mnemonic) {
-                logger.debug("Use mnemonic");
+                logger.debug('Use mnemonic');
                 this.myself = this.keyring.addFromUri(config.litentry.mnemonic);
             } else {
                 logger.debug(`Use default accounts: ${config.litentry.defaultAccount}`);
@@ -88,12 +87,14 @@ class Chain {
         const validKeys = new Set(['email', 'twitter', 'riot', 'display', 'web']);
         const keys = _.keys(info);
         for (let key of keys) {
-            if (! validKeys.has(key)) {
+            if (!validKeys.has(key)) {
                 throw Error(`Unexcepted identity info key: ${key}`);
             }
         }
 
-        info = _.mapValues(info, function(elem) { return { Raw: elem }; });
+        info = _.mapValues(info, function (elem) {
+            return { Raw: elem };
+        });
         const transfer = await this.api.tx.identity.setIdentity(info);
         const hash = await transfer.signAndSend(this.myself);
 
@@ -122,11 +123,11 @@ class Chain {
      */
     async eventListenerStart() {
         if (this.unsubscribeEventListener) {
-            logger.debug("[EventListenerStart] Event listener is running now...");
+            logger.debug('[EventListenerStart] Event listener is running now...');
             return this.unsubscribeEventListener;
         }
 
-        logger.debug("[EventListenerStart] Starting event listener...");
+        logger.debug('[EventListenerStart] Starting event listener...');
         await this.connect();
 
         this.unsubscribeEventListener = this.api.query.system.events((events) => {
@@ -178,7 +179,7 @@ class Chain {
      * Stop event listener
      */
     async eventListenerStop() {
-        logger.debug("[EventListenerStop] Stopping event listener...");
+        logger.debug('[EventListenerStop] Stopping event listener...');
         if (this.unsubscribeEventListener) {
             this.unsubscribeEventListener();
         }
@@ -189,7 +190,7 @@ class Chain {
      * Restart event listener
      */
     async eventListenerRestart() {
-        logger.debug("[EventListenerRestart] Restarting event listener...");
+        logger.debug('[EventListenerRestart] Restarting event listener...');
         this.eventListenerStop();
         this.eventListenerStart();
     }
@@ -200,12 +201,12 @@ class Chain {
      * @param {String} judgement - judgement for a user, should be one of
      *                 ['Unknown', 'FeePaid', 'Reasonable', 'KnownGood', 'OutOfDate', 'LowQuality]
      */
-    async provideJudgement(target, judgement, fee=null) {
+    async provideJudgement(target, judgement, fee = null) {
         await this.connect();
 
         const regIndex = this.config.litentry.regIndex;
 
-        if (! _.keys(Judgement).includes(judgement)) {
+        if (!_.keys(Judgement).includes(judgement)) {
             throw new Error(`Unknown judgement type: ${judgement}, should be one of [${_.keys(Judgement)}]`);
         }
 
@@ -253,14 +254,13 @@ class Chain {
 
 const chain = new Chain(config);
 
-const convert = (from, to) => str => Buffer.from(str, from).toString(to);
+const convert = (from, to) => (str) => Buffer.from(str, from).toString(to);
 const hexToUtf8 = convert('hex', 'utf8');
 
-
 async function handleRequestJudgement(accountID) {
-    if (! accountID) {
+    if (!accountID) {
         logger.error(`[Event] handleRequestJudgement receives empty accountID`);
-        return ;
+        return;
     }
     logger.debug(`[Event] HandleRequestJudgement: ${accountID}`);
     let identity = await chain.api.query.identity.identityOf(accountID);
@@ -294,7 +294,6 @@ async function handleRequestJudgement(accountID) {
             normalizedInfo.riot = null;
         }
 
-
         if (info.email.Raw && info.email.Raw.startsWith('0x')) {
             normalizedInfo.email = hexToUtf8(info.email.Raw.substring(2));
         } else {
@@ -325,7 +324,6 @@ async function handleRequestJudgement(accountID) {
         if (normalizedInfo.twitter) {
             ValidatorEvent.emit('handleTwitterVerification', normalizedInfo);
         }
-
     } catch (error) {
         // TODO: record this event into database for further processing.
         logger.error(`Fail to handle judgement request for account ${accountID}, error ${JSON.stringify(error)}`);

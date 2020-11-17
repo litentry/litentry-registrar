@@ -1,6 +1,15 @@
 'use strict';
 
 require('colors'); // required by .green, don't remove, TODO: introduce eslint to disable warning for this line
+
+// Ensure the NODE_ENV is loaded from .env
+delete process.env.NODE_ENV;
+const result = require('dotenv').config({ debug: true });
+
+if (result.error) {
+    throw result.error;
+}
+
 const cluster = require('cluster');
 
 const Chain = require('app/chain');
