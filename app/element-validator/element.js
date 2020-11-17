@@ -6,13 +6,12 @@ const logger = require('app/logger');
 const Validator = require('app/validator/base');
 const { ValidatorEvent } = require('app/validator/events');
 // const { RequestJudgementCollection } = require('app/db');
-
 // const utils = require('app/utils');
 
 const elementUtils = require('./element_utils');
 
 class ElementValidator {
-    
+
     constructor(config) {
         super(config);
     }

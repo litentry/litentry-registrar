@@ -2,8 +2,6 @@
 
 const axios = require('axios');
 const config = require('./dev_element_config');
-// const Validator = require('litentry-registrar/app/validator/base');
-
 
 let lastReadEventID;
 const TARGET_MESSAGE_FOUND = 'TARGET_MESSAGE_FOUND';
@@ -37,7 +35,7 @@ function setupIntervalCheck(targetUserId, targetMessage, interval=120000, maxWai
         }, 3000);
 
     }, interval);
-    
+
     let timeout = setTimeout(function() {
         clearInterval(caller);
         console.log("clearInterval...")
@@ -99,6 +97,4 @@ async function requestRoomEventHistory(nextSyncToken) {
     return res;
 }
 
-// getRoomEventHistory('','',``, 0, false, '');
-// checkTargetMessageFromHistory('@testingshark:matrix.org', 'hlel');
-startCheckingTargetMessage('@testingshark:matrix.org', 'hello testing', 15000, 120000);
+// startCheckingTargetMessage('@testingshark:matrix.org', 'hello testing', 15000, 120000);
