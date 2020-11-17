@@ -1,7 +1,8 @@
 'use strict'
 
 const axios = require('axios');
-const config = require('./dev_element_config');
+// const config = require('./dev_element_config');
+const config = require('app/config');
 
 let lastReadEventID;
 // const TARGET_MESSAGE_FOUND = 'TARGET_MESSAGE_FOUND';

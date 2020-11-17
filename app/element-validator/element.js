@@ -1,7 +1,6 @@
 'use strict';
 
-// const config = require('app/config');
-const config = require('./dev_element_config');
+const config = require('app/config');
 const logger = require('app/logger');
 const Validator = require('app/validator/base');
 const { ValidatorEvent } = require('app/validator/events');
