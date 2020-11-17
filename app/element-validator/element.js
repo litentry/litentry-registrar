@@ -10,8 +10,7 @@ const { ValidatorEvent } = require('app/validator/events');
 
 const elementUtils = require('./element_utils');
 
-class ElementValidator {
-
+class ElementValidator extends Validator {
     constructor(config) {
         super(config);
     }
@@ -22,7 +21,6 @@ class ElementValidator {
 }
 
 const validator = new ElementValidator(config);
-
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);

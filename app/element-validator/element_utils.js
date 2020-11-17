@@ -4,10 +4,11 @@ const axios = require('axios');
 const config = require('./dev_element_config');
 
 let lastReadEventID;
-const TARGET_MESSAGE_FOUND = 'TARGET_MESSAGE_FOUND';
+// const TARGET_MESSAGE_FOUND = 'TARGET_MESSAGE_FOUND';
 let isTargetMessageFoundFlag = false;
 
 
+// eslint-disable-next-line
 function startCheckingTargetMessage(targetUserId, targetMessage, interval=120000, maxWaitingTime=1800000) {
     checkTargetMessageFromHistory(targetUserId, targetMessage, lastReadEventID, true);
 
