@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const LRU = require("lru-cache");
 
 const logger = require('app/logger');
-const config = require('app/config');
+const config = require('app/config').litentry;
 
 
 function createJwtToken(data) {

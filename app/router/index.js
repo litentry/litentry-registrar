@@ -76,7 +76,7 @@ app.get('/chain/eventListener/status', async(req, res) => {
             return res.json({ status: 'success', msg: 'Stop.'});
         }
     } catch (error) {
-        logger.error(`GET /chain/eventListener/restart unexcepected error ${JSON.stringify(error)}`);
+        logger.error(`GET /chain/eventListener/status unexcepected error ${JSON.stringify(error)}`);
         console.trace(error);
 
         res.status(400);
@@ -125,13 +125,16 @@ app.get('/callback/validation', async(req, res) => {
         const { token } = req.query;
         const data = decodeJwtToken(token);
         console.log(data);
-
-        const { nonce } = await RequestJudgementCollection.query({ email: data.email, account: data.account, emailStatus: { $ne: 'verifiedSuccess' }});
+        // NOTE: We only extract the first row
+        // Theoretically, there should be exact one element in queried array if existed.
+        // We filter out the verified email and the request isn't canceld
+        const results = await RequestJudgementCollection.query({ _id: data._id, emailStatus: { $ne: 'verifiedSuccess'} });
+        let { nonce } = results[0];
         if (data.nonce == nonce) {
-            await RequestJudgementCollection.setEmailVerifiedSuccess(data.account, data.email);
+            await RequestJudgementCollection.setEmailVerifiedSuccessById(data._id);
             return res.json({ status: 'success', msg: ''});
         } else {
-            await RequestJudgementCollection.setEmailVerifiedFailed(data.account, data.email);
+            await RequestJudgementCollection.setEmailVerifiedFailedById(data._id);
             return res.json({ status: 'fail', msg: ''});
         }
     } catch (error) {
