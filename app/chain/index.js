@@ -130,26 +130,22 @@ class Chain {
         await this.connect();
 
         this.unsubscribeEventListener = this.api.query.system.events((events) => {
-            // console.log(`\nReceived ${events.length} events:`);
-
             // Loop through the Vec<EventRecord>
             events.forEach((record) => {
                 // Extract the phase, event and the event types
                 const { event, phase } = record;
                 const types = event.typeDef;
-                console.log('event.section: ', event.section);
-                console.log('event.method: ', event.method);
+                logger.debug(`Received event from chain: [${event.section}.${event.method}]`);
 
                 // Show what we are busy with
-                // let accountID = null;
                 let params = {};
                 if (event.section === 'identity' && event.method === 'JudgementRequested') {
-                    console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-                    console.log(`\t\t${event.meta.documentation.toString()}`);
+                    logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+                    logger.info(`\t\t${event.meta.documentation.toString()}`);
 
                     // Loop through each of the parameters, displaying the type and data
                     event.data.forEach((data, index) => {
-                        console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+                        logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
                         params[types[index].type] = data.toString();
                     });
                     // We only need to emit `handleRequestJudgement` event on our own registrar.
@@ -159,17 +155,15 @@ class Chain {
                 }
                 // TODO: Should we handle cancelRequestJudgement ?
                 if (event.section === 'identity' && event.method === 'JudgementUnrequested') {
-                    console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-                    console.log(`\t\t${event.meta.documentation.toString()}`);
+                    logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+                    logger.info(`\t\t${event.meta.documentation.toString()}`);
 
                     // Loop through each of the parameters, displaying the type and data
-
                     event.data.forEach((data, index) => {
-                        console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+                        logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
                         params[types[index].type] = data.toString();
                     });
                     // We only need to emit `handleRequestJudgement` event on our own registrar.
-                    console.log(params);
                     if (params['RegistrarIndex'] == this.config.litentry.regIndex) {
                         Event.emit('handleUnRequestJudgement', params['AccountId']);
                     }
@@ -201,35 +195,12 @@ class Chain {
     }
 
     /**
-     * Check if all related information are verified
-     * @param {String} accountID - a hex-based address
-     * @return {Boolean} return true if it's ready for providing judgement, otherwise, return false
-     */
-    async isReadyForProvideJudgement(accountID) {
-        logger.debug(`[Chain.isReadyForProvideJudgement] check prerequirement for account ${accountID}`);
-        const content = await RequestJudgementCollection.queryByAccount(accountID);
-        if (content.email && content.emailStatus !== 'verifiedSuccess') {
-            return false;
-        }
-        if (content.twitter && content.twitterStatus !== 'verifiedSuccess') {
-            return false;
-        }
-        if (content.riot && content.riotStatus !== 'verifiedSuccess') {
-            return false;
-        }
-        return true;
-    }
-    /**
      * Provide judgement for a target user
      * @param {String} target - an hex string used to represented the target user
      * @param {String} judgement - judgement for a user, should be one of
      *                 ['Unknown', 'FeePaid', 'Reasonable', 'KnownGood', 'OutOfDate', 'LowQuality]
      */
     async provideJudgement(target, judgement, fee=null) {
-        if (! await this.isReadyForProvideJudgement(target)) {
-            throw new Error('Not all information are verified.');
-        }
-
         await this.connect();
 
         const regIndex = this.config.litentry.regIndex;
@@ -288,6 +259,7 @@ const hexToUtf8 = convert('hex', 'utf8');
 
 async function handleRequestJudgement(accountID) {
     if (! accountID) {
+        logger.error(`[Event] handleRequestJudgement receives empty accountID`);
         return ;
     }
     logger.debug(`[Event] HandleRequestJudgement: ${accountID}`);
@@ -329,19 +301,8 @@ async function handleRequestJudgement(accountID) {
             normalizedInfo.email = null;
         }
 
-        // if (info.pgpFingerprint) {
-        //     normalizedInfo.pgpFingerprint = hexToUtf8(info.pgpFingerprint.substring(2))
-        // } else {
-        //     normalizedInfo.pgpFingerprint = null;
-        // }
-        // TODO: support pgp finger print
+        // TODO: support pgp finger print and image
         normalizedInfo.pgpFingerprint = null;
-
-        // if (info.image.Raw && info.image.Raw.startsWith('0x')) {
-        //     normalizedInfo.image = hexToUtf8(info.image.Raw.substring(2));
-        // } else {
-        //     normalizedInfo.image = null;
-        // }
         normalizedInfo.image = null;
 
         if (info.twitter.Raw && info.twitter.Raw.startsWith('0x')) {
@@ -352,7 +313,8 @@ async function handleRequestJudgement(accountID) {
 
         logger.debug(`[Event] normalizedInfo: ${JSON.stringify(normalizedInfo)}`);
         // Store this request into database
-        await RequestJudgementCollection.insert(normalizedInfo);
+        const insertedId = await RequestJudgementCollection.insert(normalizedInfo);
+        normalizedInfo['_id'] = insertedId;
 
         if (normalizedInfo.email) {
             ValidatorEvent.emit('handleEmailVerification', normalizedInfo);
@@ -380,5 +342,18 @@ Event.on('handleRequestJudgement', async (accountID) => {
     return await func(accountID);
 });
 
+async function handleUnRequestJudgement(accountID) {
+    logger.debug(`[Event] HandleUnRequestJudgement: ${accountID}`);
+    return await RequestJudgementCollection.cancel(accountID);
+}
+
+/**
+ * Event handler for cancel a request judgement
+ * @param {String} accountID - the accountID to be canceled by our platform
+ */
+Event.on('handleUnRequestJudgement', async (accountID) => {
+    const func = throttle(`handleUnRequestJudgement:${accountID}`, handleUnRequestJudgement);
+    return await func(accountID);
+});
 
 module.exports = chain;
