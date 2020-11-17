@@ -19,5 +19,5 @@ if (process.env.NODE_ENV === 'dev') {
     module.exports = require('app/config/staging');
 } else {
     // Invalid node enviroment type, crash this application
-    throw Error("Not an invalid environment");
+    throw Error('Not an invalid environment');
 }

@@ -4,7 +4,7 @@
     "description": "Litentry Polkadot/Kusama Registrar",
     "main": "index.js",
     "scripts": {
-        "app": "./node_modules/.bin/nodemon app/index.js",
+        "app": "nodemon app/index.js",
         "link": "ln -sf ../app node_modules/app",
         "lint": "./node_modules/.bin/eslint --fix app",
         "start": "pm2 restart app"
@@ -38,7 +38,8 @@
     "devDependencies": {
         "eslint": "^7.12.1",
         "husky": "^4.3.0",
-        "nodemon": "^2.0.6"
+        "nodemon": "^2.0.6",
+        "pm2": "^4.5.0"
     },
     "husky": {
         "hooks": {

@@ -7,13 +7,13 @@ const { combine, timestamp, printf, colorize } = winston.format;
 
 let logPath = null;
 
-if (process.env.NODE_ENV == 'dev') {
+if (process.env.NODE_ENV === 'dev') {
     logPath = './log/litentry-registrar';
 } else {
     logPath = '/var/log/litentry';
 }
 
-if (! fs.existsSync(logPath)) {
+if (!fs.existsSync(logPath)) {
     fs.mkdirSync(logPath);
 }
 
@@ -28,7 +28,7 @@ const transports = [
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: '2048m',
-        maxFiles: '31d'
+        maxFiles: '31d',
     }),
     new DailyRotateFile({
         level: 'error',
@@ -36,24 +36,22 @@ const transports = [
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: '2048m',
-        maxFiles: '31d'
-    })
+        maxFiles: '31d',
+    }),
 ];
 
 if (process.env.NODE_ENV !== 'production') {
-    transports.push(new winston.transports.Console({
-        level: 'debug'
-    }));
+    transports.push(
+        new winston.transports.Console({
+            level: 'debug',
+        })
+    );
 }
 
 function getLogger() {
     const logger = winston.createLogger({
-        format: combine(
-            timestamp(),
-            colorize(),
-            myFormat,
-        ),
-        transports: transports
+        format: combine(timestamp(), colorize(), myFormat),
+        transports: transports,
     });
     return logger;
 }

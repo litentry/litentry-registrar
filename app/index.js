@@ -6,7 +6,6 @@ const cluster = require('cluster');
 const Chain = require('app/chain');
 const logger = require('app/logger');
 
-
 if (cluster.isMaster) {
     logger.debug(`Master process ${process.pid} is running...`.green);
     // Fork workers
@@ -30,7 +29,6 @@ if (cluster.isMaster) {
             logger.info(`Invalid worker ${worker.id} received`.red);
         }
     });
-
 } else if (cluster.worker.process.env.type == 'provide_judgement_process') {
     const _ = require('lodash');
     // Run `provideJudgement` every `interval`
@@ -40,8 +38,8 @@ if (cluster.isMaster) {
     const interval = config.provideJudgementInterval || 120;
     let promises = [];
     setInterval(async () => {
-        if (! _.isEmpty(promises)) {
-            return ;
+        if (!_.isEmpty(promises)) {
+            return;
         }
 
         /* Filter out requests according to following conditions:
@@ -52,23 +50,21 @@ if (cluster.isMaster) {
          *    `status` is used to indicate the final status of requested judgement,
          *     can be 'canceled', 'verifiedSuccess' or not existed.
          */
-        const requests = await RequestJudgementCollection.query({ $and: [
-            { $or: [ { riotStatus: { $eq: 'verifiedSuccess' } },
-                     { riot: { $eq: null } } ] },
-            { $or: [ { emailStatus: { $eq: 'verifiedSuccess', $exists: true } },
-                     { email: { $eq: null } } ] },
-            { $or: [ { twitterStatus: { $eq: 'verifiedSuccess', $exists: true } },
-                     { twitter: { $eq: null } } ] },
-            { $and: [ { status: { $ne: 'verifiedSuccess' } },
-                     { status: { $ne: 'canceled' } } ] }
-        ]});
+        const requests = await RequestJudgementCollection.query({
+            $and: [
+                { $or: [{ riotStatus: { $eq: 'verifiedSuccess' } }, { riot: { $eq: null } }] },
+                { $or: [{ emailStatus: { $eq: 'verifiedSuccess', $exists: true } }, { email: { $eq: null } }] },
+                { $or: [{ twitterStatus: { $eq: 'verifiedSuccess', $exists: true } }, { twitter: { $eq: null } }] },
+                { $and: [{ status: { $ne: 'verifiedSuccess' } }, { status: { $ne: 'canceled' } }] },
+            ],
+        });
         logger.debug(`Run provideJudgement for ${requests.length} judgement requests.`);
 
         const judgement = config.defaultJudgement || 'Unknown';
         const fee = null;
 
         for (let request of requests) {
-            const target =  request.account;
+            const target = request.account;
 
             // Sanity checking
             if (request.email && request.emailStatus !== 'verifiedSuccess') {
@@ -92,14 +88,12 @@ if (cluster.isMaster) {
             promises.push(promise);
         }
         /* Run all asynchronous tasks at the same time */
-        if (! _.isEmpty(promises)) {
+        if (!_.isEmpty(promises)) {
             await Promise.all(promises);
             /* Clear all elements in array */
             promises.length = 0;
-
         }
-    }, interval*1000);
-
+    }, interval * 1000);
 } else if (cluster.worker.process.env.type == 'web_server_process') {
     const config = require('app/config').http;
 
@@ -125,5 +119,4 @@ if (cluster.isMaster) {
 } else {
     logger.error(`Unknown worker type ${cluster.worker.process.env.type}`);
     throw new Error(`Unknown worker type ${cluster.worker.process.env.type}`);
-
 }
