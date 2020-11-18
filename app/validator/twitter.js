@@ -89,5 +89,4 @@ ValidatorEvent.on('handleTwitterVerification', async (info) => {
     }
 });
 
-
 module.exports = TwitterValidator;
