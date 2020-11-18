@@ -15,19 +15,18 @@ const { throttle } = require('app/utils');
 const EventEmitter = require('events').EventEmitter;
 const Event = new EventEmitter();
 
-var Judgement = {
+const Judgement = {
     FeePaid: {
         // value like: 100 DOT
-        FeePaid: null
+        FeePaid: null,
     },
 
     Unknown: { Unknown: null },
     Reasonable: { Reasonable: null },
     KnownGood: { KnownGood: null },
     OutOfDate: { OutOfDate: null },
-    LowQuality: { LowQuality: null }
-}
-
+    LowQuality: { LowQuality: null },
+};
 
 class Chain {
     /**
@@ -55,12 +54,12 @@ class Chain {
      */
     async connect() {
         this.api = await ApiPromise.create({ provider: this.wsProvider });
-        if (! this.myself) {
+        if (!this.myself) {
             if (config.litentry.privateKey) {
-                logger.debug("Use private key");
+                logger.debug('Use private key');
                 this.myself = this.keyring.addFromUri(config.litentry.privateKey);
             } else if (config.litentry.mnemonic) {
-                logger.debug("Use mnemonic");
+                logger.debug('Use mnemonic');
                 this.myself = this.keyring.addFromUri(config.litentry.mnemonic);
             } else {
                 logger.debug(`Use default accounts: ${config.litentry.defaultAccount}`);
@@ -88,12 +87,14 @@ class Chain {
         const validKeys = new Set(['email', 'twitter', 'riot', 'display', 'web']);
         const keys = _.keys(info);
         for (let key of keys) {
-            if (! validKeys.has(key)) {
+            if (!validKeys.has(key)) {
                 throw Error(`Unexcepted identity info key: ${key}`);
             }
         }
 
-        info = _.mapValues(info, function(elem) { return { Raw: elem }; });
+        info = _.mapValues(info, function (elem) {
+            return { Raw: elem };
+        });
         const transfer = await this.api.tx.identity.setIdentity(info);
         const hash = await transfer.signAndSend(this.myself);
 
@@ -109,6 +110,7 @@ class Chain {
     }
 
     async blockWatcher() {
+        await this.connect();
         const unsubscribeBlockerWatcher = await this.api.rpc.chain.subscribeNewHeads(async (header) => {
             console.log(`Chain is at block: #${header.number}`);
         });
@@ -121,34 +123,30 @@ class Chain {
      */
     async eventListenerStart() {
         if (this.unsubscribeEventListener) {
-            logger.debug("[EventListenerStart] Event listener is running now...");
+            logger.debug('[EventListenerStart] Event listener is running now...');
             return this.unsubscribeEventListener;
         }
 
-        logger.debug("[EventListenerStart] Starting event listener...");
+        logger.debug('[EventListenerStart] Starting event listener...');
         await this.connect();
 
         this.unsubscribeEventListener = this.api.query.system.events((events) => {
-            // console.log(`\nReceived ${events.length} events:`);
-
             // Loop through the Vec<EventRecord>
             events.forEach((record) => {
                 // Extract the phase, event and the event types
                 const { event, phase } = record;
                 const types = event.typeDef;
-                console.log('event.section: ', event.section);
-                console.log('event.method: ', event.method);
+                logger.debug(`Received event from chain: [${event.section}.${event.method}]`);
 
                 // Show what we are busy with
-                // let accountID = null;
                 let params = {};
                 if (event.section === 'identity' && event.method === 'JudgementRequested') {
-                    console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-                    console.log(`\t\t${event.meta.documentation.toString()}`);
+                    logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+                    logger.info(`\t\t${event.meta.documentation.toString()}`);
 
                     // Loop through each of the parameters, displaying the type and data
                     event.data.forEach((data, index) => {
-                        console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+                        logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
                         params[types[index].type] = data.toString();
                     });
                     // We only need to emit `handleRequestJudgement` event on our own registrar.
@@ -158,17 +156,15 @@ class Chain {
                 }
                 // TODO: Should we handle cancelRequestJudgement ?
                 if (event.section === 'identity' && event.method === 'JudgementUnrequested') {
-                    console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-                    console.log(`\t\t${event.meta.documentation.toString()}`);
+                    logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+                    logger.info(`\t\t${event.meta.documentation.toString()}`);
 
                     // Loop through each of the parameters, displaying the type and data
-
                     event.data.forEach((data, index) => {
-                        console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+                        logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
                         params[types[index].type] = data.toString();
                     });
                     // We only need to emit `handleRequestJudgement` event on our own registrar.
-                    console.log(params);
                     if (params['RegistrarIndex'] == this.config.litentry.regIndex) {
                         Event.emit('handleUnRequestJudgement', params['AccountId']);
                     }
@@ -183,7 +179,7 @@ class Chain {
      * Stop event listener
      */
     async eventListenerStop() {
-        logger.debug("[EventListenerStop] Stopping event listener...");
+        logger.debug('[EventListenerStop] Stopping event listener...');
         if (this.unsubscribeEventListener) {
             this.unsubscribeEventListener();
         }
@@ -194,46 +190,23 @@ class Chain {
      * Restart event listener
      */
     async eventListenerRestart() {
-        logger.debug("[EventListenerRestart] Restarting event listener...");
+        logger.debug('[EventListenerRestart] Restarting event listener...');
         this.eventListenerStop();
         this.eventListenerStart();
     }
 
-    /**
-     * Check if all related information are verified
-     * @param {String} accountID - a hex-based address
-     * @return {Boolean} return true if it's ready for providing judgement, otherwise, return false
-     */
-    async isReadyForProvideJudgement(accountID) {
-        logger.debug(`[Chain.isReadyForProvideJudgement] check prerequirement for account ${accountID}`);
-        const content = await RequestJudgementCollection.queryByAccount(accountID);
-        if (content.email && content.emailStatus !== 'verifiedSuccess') {
-            return false;
-        }
-        if (content.twitter && content.twitterStatus !== 'verifiedSuccess') {
-            return false;
-        }
-        if (content.riot && content.riotStatus !== 'verifiedSuccess') {
-            return false;
-        }
-        return true;
-    }
     /**
      * Provide judgement for a target user
      * @param {String} target - an hex string used to represented the target user
      * @param {String} judgement - judgement for a user, should be one of
      *                 ['Unknown', 'FeePaid', 'Reasonable', 'KnownGood', 'OutOfDate', 'LowQuality]
      */
-    async provideJudgement(target, judgement, fee=null) {
-        if (! await this.isReadyForProvideJudgement(target)) {
-            throw new Error('Not all information are verified.');
-        }
-
+    async provideJudgement(target, judgement, fee = null) {
         await this.connect();
 
         const regIndex = this.config.litentry.regIndex;
 
-        if (! _.keys(Judgement).includes(judgement)) {
+        if (!_.keys(Judgement).includes(judgement)) {
             throw new Error(`Unknown judgement type: ${judgement}, should be one of [${_.keys(Judgement)}]`);
         }
 
@@ -281,13 +254,13 @@ class Chain {
 
 const chain = new Chain(config);
 
-const convert = (from, to) => str => Buffer.from(str, from).toString(to);
+const convert = (from, to) => (str) => Buffer.from(str, from).toString(to);
 const hexToUtf8 = convert('hex', 'utf8');
 
-
 async function handleRequestJudgement(accountID) {
-    if (! accountID) {
-        return ;
+    if (!accountID) {
+        logger.error(`[Event] handleRequestJudgement receives empty accountID`);
+        return;
     }
     logger.debug(`[Event] HandleRequestJudgement: ${accountID}`);
     let identity = await chain.api.query.identity.identityOf(accountID);
@@ -321,26 +294,14 @@ async function handleRequestJudgement(accountID) {
             normalizedInfo.riot = null;
         }
 
-
         if (info.email.Raw && info.email.Raw.startsWith('0x')) {
             normalizedInfo.email = hexToUtf8(info.email.Raw.substring(2));
         } else {
             normalizedInfo.email = null;
         }
 
-        // if (info.pgpFingerprint) {
-        //     normalizedInfo.pgpFingerprint = hexToUtf8(info.pgpFingerprint.substring(2))
-        // } else {
-        //     normalizedInfo.pgpFingerprint = null;
-        // }
-        // TODO: support pgp finger print
+        // TODO: support pgp finger print and image
         normalizedInfo.pgpFingerprint = null;
-
-        // if (info.image.Raw && info.image.Raw.startsWith('0x')) {
-        //     normalizedInfo.image = hexToUtf8(info.image.Raw.substring(2));
-        // } else {
-        //     normalizedInfo.image = null;
-        // }
         normalizedInfo.image = null;
 
         if (info.twitter.Raw && info.twitter.Raw.startsWith('0x')) {
@@ -351,7 +312,8 @@ async function handleRequestJudgement(accountID) {
 
         logger.debug(`[Event] normalizedInfo: ${JSON.stringify(normalizedInfo)}`);
         // Store this request into database
-        await RequestJudgementCollection.insert(normalizedInfo);
+        const insertedId = await RequestJudgementCollection.insert(normalizedInfo);
+        normalizedInfo['_id'] = insertedId;
 
         if (normalizedInfo.email) {
             ValidatorEvent.emit('handleEmailVerification', normalizedInfo);
@@ -362,7 +324,6 @@ async function handleRequestJudgement(accountID) {
         if (normalizedInfo.twitter) {
             ValidatorEvent.emit('handleTwitterVerification', normalizedInfo);
         }
-
     } catch (error) {
         // TODO: record this event into database for further processing.
         logger.error(`Fail to handle judgement request for account ${accountID}, error ${JSON.stringify(error)}`);
@@ -379,5 +340,18 @@ Event.on('handleRequestJudgement', async (accountID) => {
     return await func(accountID);
 });
 
+async function handleUnRequestJudgement(accountID) {
+    logger.debug(`[Event] HandleUnRequestJudgement: ${accountID}`);
+    return await RequestJudgementCollection.cancel(accountID);
+}
+
+/**
+ * Event handler for cancel a request judgement
+ * @param {String} accountID - the accountID to be canceled by our platform
+ */
+Event.on('handleUnRequestJudgement', async (accountID) => {
+    const func = throttle(`handleUnRequestJudgement:${accountID}`, handleUnRequestJudgement);
+    return await func(accountID);
+});
 
 module.exports = chain;

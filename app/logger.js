@@ -7,13 +7,13 @@ const { combine, timestamp, printf, colorize } = winston.format;
 
 let logPath = null;
 
-if (process.env.NODE_ENV == 'dev') {
+if (process.env.NODE_ENV === 'dev') {
     logPath = './log/litentry-registrar';
 } else {
-    logPath = './log/litentry-registrar';
+    logPath = '/var/log/litentry';
 }
 
-if (! fs.existsSync(logPath)) {
+if (!fs.existsSync(logPath)) {
     fs.mkdirSync(logPath);
 }
 
@@ -24,36 +24,34 @@ const myFormat = printf(({ level, message, timestamp }) => {
 const transports = [
     new DailyRotateFile({
         level: 'info',
-        filename: `${logPath}/baymax-info-%DATE%.log`,
+        filename: `${logPath}/info-%DATE%.log`,
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: '2048m',
-        maxFiles: '31d'
+        maxFiles: '31d',
     }),
     new DailyRotateFile({
         level: 'error',
-        filename: `${logPath}/baymax-error-%DATE%.log`,
+        filename: `${logPath}/error-%DATE%.log`,
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: '2048m',
-        maxFiles: '31d'
-    })
+        maxFiles: '31d',
+    }),
 ];
 
 if (process.env.NODE_ENV !== 'production') {
-    transports.push(new winston.transports.Console({
-        level: 'debug'
-    }));
+    transports.push(
+        new winston.transports.Console({
+            level: 'debug',
+        })
+    );
 }
 
 function getLogger() {
     const logger = winston.createLogger({
-        format: combine(
-            timestamp(),
-            colorize(),
-            myFormat,
-        ),
-        transports: transports
+        format: combine(timestamp(), colorize(), myFormat),
+        transports: transports,
     });
     return logger;
 }

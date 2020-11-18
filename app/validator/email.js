@@ -41,9 +41,9 @@ const validator = new EmailValidator(config.emailValidator);
 ValidatorEvent.on('handleEmailVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle email verification: ${JSON.stringify(info)}.`);
     const nonce = utils.generateNonce();
-    const token = utils.createJwtToken({ nonce: nonce, account: info.account, email: info.email });
+    const token = utils.createJwtToken({ nonce: nonce, _id: info._id });
     await validator.invoke(info.email, token);
-    await RequestJudgementCollection.setEmailVerifiedPending(info.account, info.email, { nonce: nonce });
+    await RequestJudgementCollection.setEmailVerifiedPendingById(info._id, { nonce: nonce });
 });
 
 

@@ -1,11 +1,9 @@
-'use strict';
-
-
+const _ = require('lodash');
 const MongoClient = require('mongodb').MongoClient;
+const { ObjectId } = require('mongodb');
 
 const config = require('app/config').mongodb;
 const logger = require('app/logger');
-
 
 class MongodbStorage {
     constructor(config) {
@@ -22,12 +20,12 @@ class MongodbStorage {
     async connect() {
         if (this.client) {
             logger.debug(`[MongodbStorage.connect] storage is already connected.`);
-            return ;
+            return;
         }
 
         let endpoint = '';
         if (this.config.username && this.config.password) {
-            // NOTE: not tested
+            // TODO: not tested
             endpoint = `mongodb://${this.config.username}:${this.config.password}@${this.config.host}:${this.config.port}`;
         } else {
             endpoint = `mongodb://${this.config.host}:${this.config.port}`;
@@ -46,13 +44,23 @@ class MongodbStorage {
      */
     async query(collection, filter) {
         await this.connect();
+
+        if (_.keys(filter).includes('_id') && _.isString(filter['_id'])) {
+            filter['_id'] = ObjectId(filter['_id']);
+        }
+
         const _collection = this.database.collection(collection);
+
         const results = await _collection.find(filter).toArray();
         return results;
     }
 
     async queryById(collection, id) {
-        return await this.query(collection, { _id: id });
+        let _id = id;
+        if (_.isString(id)) {
+            _id = ObjectId(id);
+        }
+        return await this.query(collection, { _id: _id });
     }
 
     /**
@@ -63,8 +71,10 @@ class MongodbStorage {
     async insert(collection, content) {
         await this.connect();
         const _collection = this.database.collection(collection);
-        const result = await _collection.insertOne(content);
-        logger.debug(`[MongodbStorage.insert] insert ${result.insertedCount} document into ${collection}, insertedId is: ${result.insertedId}`);
+        const result = await _collection.insertOne({ ...content, createdAt: new Date(), updatedAt: new Date() });
+        logger.debug(
+            `[MongodbStorage.insert] insert ${result.insertedCount} document into ${collection}, insertedId is: ${result.insertedId}`
+        );
         return result.insertedId;
     }
 
@@ -77,8 +87,12 @@ class MongodbStorage {
     async update(collection, filter, content) {
         await this.connect();
 
+        if (_.keys(filter).includes('_id') && _.isString(filter['_id'])) {
+            filter['_id'] = ObjectId(filter['_id']);
+        }
         const options = { upsert: true };
-        const updateDoc = { $set: content };
+
+        const updateDoc = { $set: { ...content, updatedAt: new Date() } };
         const _collection = this.database.collection(collection);
         const result = await _collection.updateOne(filter, updateDoc, options);
         logger.debug(`[MongodbStorage.update] update ${result.modifiedCount} document into ${collection}`);
@@ -100,33 +114,30 @@ class RequestJudgementCollection {
     async updateById(id, content) {
         return await this.db.updateById(this.collectionName, id, content);
     }
-    async updateByAccount(account, content) {
-        const filter = { account: account };
-        return await this.db.update(this.collectionName, filter, content);
-    }
 
     async query(filter) {
-        // TOOD: find one result or all result
         const results = await this.db.query(this.collectionName, filter);
-        return results[0];
+        return results;
     }
 
     async queryByAccount(account) {
         return await this.query(this.collectionName, { account: account });
     }
 
-    async setEmailVerifiedPending(account, email, addition={}) {
-        const filter = { account: account, email: email };
+    async setEmailVerifiedPendingById(id, addition = {}) {
+        const filter = { _id: id };
         const content = { emailStatus: 'pending', ...addition };
         return await this.db.update(this.collectionName, filter, content);
     }
-    async setEmailVerifiedSuccess(account, email) {
-        const filter = { account: account, email: email };
+
+    async setEmailVerifiedSuccessById(id) {
+        const filter = { _id: id };
         const content = { emailStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }
-    async setEmailVerifiedFailed(account, email) {
-        const filter = { account: account, email: email };
+
+    async setEmailVerifiedFailedById(id) {
+        const filter = { _id: id };
         const content = { emailStatus: 'verifiedFailed' };
         return await this.db.update(this.collectionName, filter, content);
     }
@@ -153,9 +164,18 @@ class RequestJudgementCollection {
         return await this.db.update(this.collectionName, filter, content);
     }
 
+    async cancel(account) {
+        /* The account is still not verified, we can set it to be canceled  */
+        const _collection = this.db.database.collection(this.collectionName);
+        const results = await _collection.updateMany(
+            { account: account, $and: [{ status: { $ne: 'verifiedSuccess' } }, { status: { $ne: 'canceled' } }] },
+            { $set: { status: 'canceled' } }
+        );
+        logger.debug(`[MongodbStorage.update] update ${results.modifiedCount} document into ${this.collectionName}`);
+    }
 }
 
-if (! config) {
+if (!config) {
     throw new Error('Add configuration for mongodb.');
 }
 
@@ -163,5 +183,5 @@ const storage = new MongodbStorage(config);
 
 module.exports = {
     Storage: storage,
-    RequestJudgementCollection: new RequestJudgementCollection(storage)
+    RequestJudgementCollection: new RequestJudgementCollection(storage),
 };
