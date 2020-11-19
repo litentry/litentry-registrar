@@ -3,22 +3,10 @@
 const logger = require('app/logger');
 const config = require('app/config');
 const TwitterApi = require('twitter');
-const Configs = require('dotenv').config();
 const Validator = require('app/validator/base');
 
 const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection } = require('app/db');
-
-if (Configs.error) {
-  throw Configs.error;
-}
-
-const client = new TwitterApi({
-  consumer_key: process.env.CONSUMER_KEY,
-  consumer_secret: process.env.CONSUMER_SECRET,
-  access_token_key: process.env.TOKEN_KEY,
-  access_token_secret: process.env.TOKEN_SECRET
-});
 
 class TwitterValidator extends Validator {
   constructor(config) {
@@ -27,8 +15,15 @@ class TwitterValidator extends Validator {
   }
 
   async invoke(userName, walletAddr) {
+    const client = new TwitterApi({
+      consumer_key: this.config.consumerKey,
+      consumer_secret: this.config.consumerSecret,
+      access_token_key: this.config.tokenKey,
+      access_token_secret: this.config.tokenSecret
+    });
+
     let caller = setInterval(function(){
-      this._poll(userName, walletAddr);
+      this._poll(client, userName, walletAddr);
       if (this._is_twitter_verified === true || this._is_twitter_verified === false) {
         logger.debug("Got a result, clear interval...")
         clearInterval(caller);
@@ -44,7 +39,7 @@ class TwitterValidator extends Validator {
     }, 8000);
   }
 
-  _poll(userName, walletAddr) {
+  _poll(client, userName, walletAddr) {
     const params = { screen_name: userName };
 
     client.get('users/lookup.json', params, function (error, msgs) {

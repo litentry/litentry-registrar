@@ -63,7 +63,7 @@ let caller = setInterval(function(){
  //   // continue running
  // }
 }, 3000);
-let timeout = setTimeout(function() {
+setTimeout(function() {
   clearInterval(caller);
   console.log("Twitter polling reached time out, clear interval...")
   return;
