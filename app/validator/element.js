@@ -66,30 +66,29 @@ function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval=12
     
 }
 
-function checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventId='', isFirstCall=true, nextSyncToken='', page=0) {
+async function checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventId='', isFirstCall=true, nextSyncToken='', page=0) {
 
     console.log('This is stream no.' + page);
-    requestRoomEventHistory(nextSyncToken).then(
-        function(result) {
-            if (result.data.start == result.data.end) {
-                console.log('You have reached the end of room event history');
-                return;
+    try {
+        let result = await requestRoomEventHistory(nextSyncToken);
+        if (result.data.start == result.data.end) {
+            console.log('You have reached the end of room event history');
+            return;
+        }
+        else {
+            if (page == 0) {
+                lastReadEventID = result.data.chunk[0].event_id;
             }
-            else {
-                if (page == 0) {
-                    lastReadEventID = result.data.chunk[0].event_id;
+            let i;
+            for (i=0; i<result.data.chunk.length; i++) {
+                let cur_event = result.data.chunk[i];
+                if (cur_event.event_id == lastReadEventId) {
+                    console.log('There is no more unread event');
+                    return;
                 }
-                let i;
-                for (i=0; i<result.data.chunk.length; i++) {
-                    let cur_event = result.data.chunk[i];
-                    if (cur_event.event_id == lastReadEventId) {
-                        console.log('There is no more unread event');
-                        return;
-                    }
-                    if (cur_event.type == 'm.room.message') {
-                        console.log('------ ' + cur_event.user_id + ' said:');
-                        console.log(cur_event.content);
-                    }
+                if (cur_event.type == 'm.room.message') {
+                    console.log('------ ' + cur_event.user_id + ' said:');
+                    console.log(cur_event.content);
                     if (cur_event.user_id == targetUserId && cur_event.content.body == targetMessage) {
                         isTargetMessageFoundFlag = true;
                         RequestJudgementCollection.setRiotVerifiedSuccessById(databaseId);
@@ -97,18 +96,17 @@ function checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, 
                         return;
                     }
                 }
-                
-                if (!isFirstCall) {
-                    nextSyncToken = result.data.end;
-                    page += 1;
-                    return checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventId, false, nextSyncToken, page);
-                }
             }
-        },
-        function(error){
-            console.log(error);
+            
+            if (!isFirstCall) {
+                nextSyncToken = result.data.end;
+                page += 1;
+                return checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventId, false, nextSyncToken, page);
+            }
         }
-    );
+    } catch (err) {
+        console.log(err);
+    }
 }
 
 async function requestRoomEventHistory(nextSyncToken) {
