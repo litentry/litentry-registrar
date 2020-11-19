@@ -10,10 +10,9 @@ const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection } = require('app/db');
 
 class TwitterValidator extends Validator {
-    constructor(config, requestJudgementCollection) {
+    constructor(config) {
         super(config);
         this._is_twitter_verified = undefined;
-        this._db_obj = requestJudgementCollection;
     }
 
     async invoke(userName, walletAddr) {
@@ -77,7 +76,7 @@ class TwitterValidator extends Validator {
     }
 }
 
-const validator = new TwitterValidator(config.twitterValidater, RequestJudgementCollection);
+const validator = new TwitterValidator(config.twitterValidater);
 
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
