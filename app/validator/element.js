@@ -82,11 +82,11 @@ async function checkTargetMessageFromHistory(
     console.log('This is stream no.' + page);
     try {
         const result = await requestRoomEventHistory(nextSyncToken);
-        if (result.data.start == result.data.end) {
+        if (result.data.start === result.data.end) {
             console.log('You have reached the end of room event history');
             return;
         } else {
-            if (page == 0) {
+            if (page === 0) {
                 lastReadEventID = result.data.chunk[0].event_id;
             }
             let i;
@@ -96,10 +96,10 @@ async function checkTargetMessageFromHistory(
                     console.log('There is no more unread event');
                     return;
                 }
-                if (cur_event.type == 'm.room.message') {
+                if (cur_event.type === 'm.room.message') {
                     console.log('------ ' + cur_event.user_id + ' said:');
                     console.log(cur_event.content);
-                    if (cur_event.user_id == targetUserId && cur_event.content.body == targetMessage) {
+                    if (cur_event.user_id === targetUserId && cur_event.content.body === targetMessage) {
                         isTargetMessageFoundFlag = true;
                         await RequestJudgementCollection.setRiotVerifiedSuccessById(databaseId);
                         console.log('And congratulations! You have found the target message!');
