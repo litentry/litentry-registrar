@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const logger = require('app/logger');
 const config = require('app/config');
 const TwitterApi = require('twitter');
@@ -9,77 +10,71 @@ const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection } = require('app/db');
 
 class TwitterValidator extends Validator {
-  constructor(config, requestJudgementCollection) {
-    super(config);
-    this._is_twitter_verified = undefined;
-    this._db_obj = requestJudgementCollection;
-  }
+    constructor(config, requestJudgementCollection) {
+        super(config);
+        this._is_twitter_verified = undefined;
+        this._db_obj = requestJudgementCollection;
+    }
 
-  async invoke(userName, walletAddr) {
-    const client = new TwitterApi({
-      consumer_key: this.config.consumerKey,
-      consumer_secret: this.config.consumerSecret,
-      access_token_key: this.config.tokenKey,
-      access_token_secret: this.config.tokenSecret
-    });
+    async invoke(userName, walletAddr) {
+        const client = new TwitterApi({
+            consumer_key: this.config.consumerKey,
+            consumer_secret: this.config.consumerSecret,
+            access_token_key: this.config.tokenKey,
+            access_token_secret: this.config.tokenSecret,
+        });
 
-    let caller = setInterval(function(){
-      this._poll(client, userName, walletAddr);
-      if (this._is_twitter_verified === true) {
-        logger.debug("Twitter verification passed, clear interval...")
-        clearInterval(caller);
-        //await this._db_obj.setTwitterVerifiedSuccess(info.account, info.twitter);
-      } else if (this._is_twitter_verified === false) {
-        logger.debug("Twitter verification failed, clear interval...")
-        clearInterval(caller);
-        //await this._db_obj.setTwitterVerifiedFailed(info.account, info.twitter);
-      } else {
-        logger.debug("Retry polling...")
-        // continue polling
-      }
-    }, this.config.pollingInterval);
-    setTimeout(function() {
-      clearInterval(caller);
-      logger.debug("Twitter polling reached time out, clear interval...")
-      return;
-    }, this.config.maxPollingTime);
-  }
-
-  _poll(client, userName, walletAddr) {
-    const params = { screen_name: userName };
-
-    client.get('users/lookup.json', params, function (error, msgs) {
-      var UserId = "";
-      if (!error && msgs.length > 0) {
-        //logger.debug(msgs[0].id_str);
-        UserId = msgs[0].id_str;
-      } else {
-        throw Error("Invalid twitter screen name!");
-      }
-
-      client.get('direct_messages/events/list', { count: 40 }, function (error, msgs) {
-        if (!error && UserId !== "") {
-          let obj = msgs.events.find(event => event.message_create.sender_id === UserId);
-          if(obj === undefined) {
-            // no match found, invoke again after configured interval
-            logger.debug("Nothing from this sender found. Retry after some seconds ...");
-          } else {
-            // print out msg content
-            logger.debug(obj.message_create.message_data.text);
-            if (walletAddr === obj.message_create.message_data.text) {
-              logger.debug("Twitter Check Passed!");
-              this._is_twitter_verified = true;
+        logger.debug('Twitter verification task starts running ...');
+        // Save context of current function
+        const self = this;
+        const caller = setInterval(async () => {
+            const resp = await self._poll(client, userName, walletAddr);
+            if (resp) {
+                logger.debug(
+                    `Twitter verification for user ${userName}, account ${walletAddr} passed, clear interval...`
+                );
+                // TODO Manipulate database, the following code may result in bugs
+                await RequestJudgementCollection.setTwitterVerificationSuccess(walletAddr, userName);
+                clearInterval(caller);
             } else {
-              logger.debug("Twitter Check Failed!");
-              this._is_twitter_verified = false;
+                logger.debug(`Retry polling twitter message for user ${userName}, account ${walletAddr}...`);
             }
-          }
-        } else {
-          throw Error("Cannot find the DM from this user");
-        }
-      });
-    });
-  }
+        }, this.config.pollingInterval);
+
+        setTimeout(async () => {
+            // NOTE: We must clear the interval first, otherwise, may occur bugs accidentally.
+            clearInterval(caller);
+
+            logger.debug('Twitter polling reached time out, clear interval...');
+            // Manipulate database, the following code may result in bugs
+            // await requestJudgementCollection.setTwitterVerificationFailed(walletAddr, userName)
+        }, this.config.maxPollingTime);
+    }
+
+    _poll(client, userName, walletAddr) {
+        const params = { screen_name: userName };
+        const limit = 40;
+        return new Promise((resolve, reject) => {
+            client.get('users/lookup.json', params, (error, msgs) => {
+                if (error || _.isEmpty(msgs)) {
+                    reject(new Error('Invalid twitter screen name!'));
+                }
+                const userId = msgs[0].id_str;
+                client.get('direct_messages/events/list', { count: limit }, (error, msgs) => {
+                    if (error || _.isEmpty(userId)) {
+                        reject(new Error('Cannot find the DM from this user'));
+                    }
+                    const found = msgs.events.find(
+                        (event) =>
+                            event.message_create.sender_id === userId &&
+                            walletAddr === event.message_create.message_data.text
+                    );
+                    // Return `undefined` or `Object`
+                    resolve(found);
+                });
+            });
+        });
+    }
 }
 
 const validator = new TwitterValidator(config.twitterValidater, RequestJudgementCollection);
@@ -87,7 +82,7 @@ const validator = new TwitterValidator(config.twitterValidater, RequestJudgement
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
     await validator.invoke(info.twitter, info.account);
-    logger.debug("Twitter verification task starts running ...");
+    logger.debug('Twitter verification task starts running ...');
 });
 
 module.exports = TwitterValidator;
