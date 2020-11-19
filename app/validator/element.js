@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 const axios = require('axios');
 const config = require('app/config');
@@ -32,55 +32,65 @@ ValidatorEvent.on('handleRiotVerification', async (info) => {
 
 module.exports = validator;
 
-function startCheckingTargetMessage(targetUserId, targetMessage, databaseId, interval=120000, maxWaitingTime=1800000) {
+function startCheckingTargetMessage(
+    targetUserId,
+    targetMessage,
+    databaseId,
+    interval = 120000,
+    maxWaitingTime = 1800000
+) {
     checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventID, true);
     setupIntervalCheck(targetUserId, targetMessage, databaseId, interval, maxWaitingTime);
 }
 
 //Default interval: 2 min; default waiting time: 30 min
-function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval=120000, maxWaitingTime=1800000) {
+function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval = 120000, maxWaitingTime = 1800000) {
     if (isTargetMessageFoundFlag) {
-        console.log("The target message was found on first call, quiting...")
+        console.log('The target message was found on first call, quiting...');
         return;
     }
-    
-    let caller = setInterval(function(){
+
+    let caller = setInterval(function () {
         checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventID, false);
         //Provide 3 sec for checkTargetMessageFromHistory to process and make signal
-        setTimeout(function() {
+        setTimeout(function () {
             if (isTargetMessageFoundFlag) {
-                console.log("The target message was found, quiting...")
+                console.log('The target message was found, quiting...');
                 clearInterval(caller);
                 clearTimeout(timeout);
                 return;
             }
         }, 3000);
-
     }, interval);
 
-    let timeout = setTimeout(function() {
+    let timeout = setTimeout(function () {
         clearInterval(caller);
-        console.log("Max waiting time has passed, clearInterval...")
+        console.log('Max waiting time has passed, clearInterval...');
         return;
     }, maxWaitingTime);
-    
 }
 
-async function checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventId='', isFirstCall=true, nextSyncToken='', page=0) {
-
+async function checkTargetMessageFromHistory(
+    targetUserId,
+    targetMessage,
+    databaseId,
+    lastReadEventId = '',
+    isFirstCall = true,
+    nextSyncToken = '',
+    page = 0
+) {
     console.log('This is stream no.' + page);
     try {
-        let result = await requestRoomEventHistory(nextSyncToken);
+        const result = await requestRoomEventHistory(nextSyncToken);
         if (result.data.start == result.data.end) {
             console.log('You have reached the end of room event history');
             return;
-        }
-        else {
+        } else {
             if (page == 0) {
                 lastReadEventID = result.data.chunk[0].event_id;
             }
             let i;
-            for (i=0; i<result.data.chunk.length; i++) {
+            for (i = 0; i < result.data.chunk.length; i++) {
                 let cur_event = result.data.chunk[i];
                 if (cur_event.event_id == lastReadEventId) {
                     console.log('There is no more unread event');
@@ -91,17 +101,25 @@ async function checkTargetMessageFromHistory(targetUserId, targetMessage, databa
                     console.log(cur_event.content);
                     if (cur_event.user_id == targetUserId && cur_event.content.body == targetMessage) {
                         isTargetMessageFoundFlag = true;
-                        RequestJudgementCollection.setRiotVerifiedSuccessById(databaseId);
+                        await RequestJudgementCollection.setRiotVerifiedSuccessById(databaseId);
                         console.log('And congratulations! You have found the target message!');
                         return;
                     }
                 }
             }
-            
+
             if (!isFirstCall) {
                 nextSyncToken = result.data.end;
                 page += 1;
-                return checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventId, false, nextSyncToken, page);
+                return checkTargetMessageFromHistory(
+                    targetUserId,
+                    targetMessage,
+                    databaseId,
+                    lastReadEventId,
+                    false,
+                    nextSyncToken,
+                    page
+                );
             }
         }
     } catch (err) {
@@ -110,11 +128,13 @@ async function checkTargetMessageFromHistory(targetUserId, targetMessage, databa
 }
 
 async function requestRoomEventHistory(nextSyncToken) {
-    let hostUrl = config.elementValidator.hostUrl;
-    let roomId = config.elementValidator.roomId;
-    let accessToken = config.elementValidator.accessToken;
-    let allMessages = hostUrl +  `/_matrix/client/r0/rooms/${roomId}/messages?limit=10&from=${nextSyncToken}&access_token=${accessToken}&dir=b`
-    let res = await axios.get(allMessages)
+    const hostUrl = config.elementValidator.hostUrl;
+    const roomId = config.elementValidator.roomId;
+    const accessToken = config.elementValidator.accessToken;
+    const allMessages =
+        hostUrl +
+        `/_matrix/client/r0/rooms/${roomId}/messages?limit=10&from=${nextSyncToken}&access_token=${accessToken}&dir=b`;
+    const res = await axios.get(allMessages);
     return res;
 }
 
