@@ -1,9 +1,10 @@
 'use strict';
 
 const logger = require('app/logger');
+const config = require('app/config');
 const TwitterApi = require('twitter');
 const Configs = require('dotenv').config();
-const validator = require('app/validator/base');
+const Validator = require('app/validator/base');
 
 const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection } = require('app/db');
@@ -79,6 +80,8 @@ class TwitterValidator extends Validator {
     });
   }
 }
+
+const validator = new TwitterValidator(config.twitterValidater);
 
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
