@@ -9,9 +9,10 @@ const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection } = require('app/db');
 
 class TwitterValidator extends Validator {
-  constructor(config) {
+  constructor(config, requestJudgementCollection) {
     super(config);
     this._is_twitter_verified = undefined;
+    this._db_obj = requestJudgementCollection;
   }
 
   async invoke(userName, walletAddr) {
@@ -24,19 +25,24 @@ class TwitterValidator extends Validator {
 
     let caller = setInterval(function(){
       this._poll(client, userName, walletAddr);
-      if (this._is_twitter_verified === true || this._is_twitter_verified === false) {
-        logger.debug("Got a result, clear interval...")
+      if (this._is_twitter_verified === true) {
+        logger.debug("Twitter verification passed, clear interval...")
         clearInterval(caller);
+        //await this._db_obj.setTwitterVerifiedSuccess(info.account, info.twitter);
+      } else if (this._is_twitter_verified === false) {
+        logger.debug("Twitter verification failed, clear interval...")
+        clearInterval(caller);
+        //await this._db_obj.setTwitterVerifiedFailed(info.account, info.twitter);
       } else {
         logger.debug("Retry polling...")
         // continue polling
       }
-    }, 5000);
+    }, this.config.pollingInterval);
     setTimeout(function() {
       clearInterval(caller);
       logger.debug("Twitter polling reached time out, clear interval...")
       return;
-    }, 8000);
+    }, this.config.maxPollingTime);
   }
 
   _poll(client, userName, walletAddr) {
@@ -76,16 +82,12 @@ class TwitterValidator extends Validator {
   }
 }
 
-const validator = new TwitterValidator(config.twitterValidater);
+const validator = new TwitterValidator(config.twitterValidater, RequestJudgementCollection);
 
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
     await validator.invoke(info.twitter, info.account);
-    if (validator._is_twitter_verified === true) {
-      await RequestJudgementCollection.setTwitterVerifiedSuccess(info.account, info.twitter);
-    } else if (validator._is_twitter_verified === false) {
-      await RequestJudgementCollection.setTwitterVerifiedFailed(info.account, info.twitter);
-    }
+    logger.debug("Twitter verification task starts running ...");
 });
 
 module.exports = TwitterValidator;
