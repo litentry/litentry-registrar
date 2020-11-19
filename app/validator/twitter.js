@@ -1,8 +1,9 @@
 'use strict';
 
+const logger = require('app/logger');
 const TwitterApi = require('twitter');
 const Configs = require('dotenv').config();
-const Validator = require('app/validator/base');
+const validator = require('app/validator/base');
 
 const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection } = require('app/db');
@@ -20,27 +21,27 @@ const client = new TwitterApi({
 
 class TwitterValidator extends Validator {
   constructor(config) {
-    this._is_twitter_verified = undefined;
     super(config);
+    this._is_twitter_verified = undefined;
   }
 
   async invoke(userName, walletAddr) {
     let caller = setInterval(function(){
-      _poll(userName, walletAddr);
+      this._poll(userName, walletAddr);
       if (this._is_twitter_verified === true || this._is_twitter_verified === false) {
-        console.log("Got a result, clear interval...")
+        logger.debug("Got a result, clear interval...")
         clearInterval(caller);
       } else {
-        console.log("Retry polling...")
+        logger.debug("Retry polling...")
         // continue polling
       }
     }, 5000);
-    let timeout = setTimeout(function() {
+    setTimeout(function() {
       clearInterval(caller);
-      console.log("Twitter polling reached time out, clear interval...")
+      logger.debug("Twitter polling reached time out, clear interval...")
       return;
     }, 8000);
-  };
+  }
 
   _poll(userName, walletAddr) {
     const params = { screen_name: userName };
@@ -48,7 +49,7 @@ class TwitterValidator extends Validator {
     client.get('users/lookup.json', params, function (error, msgs) {
       var UserId = "";
       if (!error && msgs.length > 0) {
-        //console.log(msgs[0].id_str);
+        //logger.debug(msgs[0].id_str);
         UserId = msgs[0].id_str;
       } else {
         throw Error("Invalid twitter screen name!");
@@ -59,15 +60,15 @@ class TwitterValidator extends Validator {
           let obj = msgs.events.find(event => event.message_create.sender_id === UserId);
           if(obj === undefined) {
             // no match found, invoke again after configured interval
-            console.log("Nothing from this sender found. Retry after some seconds ...");
+            logger.debug("Nothing from this sender found. Retry after some seconds ...");
           } else {
             // print out msg content
-            console.log(obj.message_create.message_data.text);
+            logger.debug(obj.message_create.message_data.text);
             if (walletAddr === obj.message_create.message_data.text) {
-              console.log("Twitter Check Passed!");
+              logger.debug("Twitter Check Passed!");
               this._is_twitter_verified = true;
             } else {
-              console.log("Twitter Check Failed!");
+              logger.debug("Twitter Check Failed!");
               this._is_twitter_verified = false;
             }
           }
