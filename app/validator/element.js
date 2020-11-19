@@ -5,7 +5,7 @@ const config = require('app/config');
 const logger = require('app/logger');
 const Validator = require('app/validator/base');
 const { ValidatorEvent } = require('app/validator/events');
-// const { RequestJudgementCollection } = require('app/db');
+const { RequestJudgementCollection } = require('app/db');
 // const utils = require('app/utils');
 let lastReadEventID;
 let isTargetMessageFoundFlag = false;
@@ -24,8 +24,9 @@ const validator = new ElementValidator(config);
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);
-    // const targetWalletAddress = '';
-    // await validator.invoke(info.riot, );
+    const targetRiotUserId = info.riot;
+    const targetWalletAddress = info.account;
+    await validator.invoke(targetRiotUserId, targetWalletAddress);
 });
 
 module.exports = validator;
