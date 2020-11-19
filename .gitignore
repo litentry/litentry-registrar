@@ -106,3 +106,6 @@ dist
 app/app
 data/*
 *.bk
+
+# Vim temp file
+*.swp
