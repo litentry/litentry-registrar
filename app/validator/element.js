@@ -15,8 +15,8 @@ class ElementValidator extends Validator {
         super(config);
     }
 
-    async invoke(targetUser, targetWalletAddr) {
-        startCheckingTargetMessage(targetUser, targetWalletAddr);
+    async invoke(targetUser, targetWalletAddr, databaseId) {
+        startCheckingTargetMessage(targetUser, targetWalletAddr, databaseId);
     }
 }
 
@@ -26,25 +26,26 @@ ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);
     const targetRiotUserId = info.riot;
     const targetWalletAddress = info.account;
-    await validator.invoke(targetRiotUserId, targetWalletAddress);
+    const dbId = info._id;
+    await validator.invoke(targetRiotUserId, targetWalletAddress, dbId);
 });
 
 module.exports = validator;
 
-function startCheckingTargetMessage(targetUserId, targetMessage, interval=120000, maxWaitingTime=1800000) {
-    checkTargetMessageFromHistory(targetUserId, targetMessage, lastReadEventID, true);
-    setupIntervalCheck(targetUserId, targetMessage, interval, maxWaitingTime);
+function startCheckingTargetMessage(targetUserId, targetMessage, databaseId, interval=120000, maxWaitingTime=1800000) {
+    checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventID, true);
+    setupIntervalCheck(targetUserId, targetMessage, databaseId, interval, maxWaitingTime);
 }
 
 //Default interval: 2 min; default waiting time: 30 min
-function setupIntervalCheck(targetUserId, targetMessage, interval=120000, maxWaitingTime=1800000) {
+function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval=120000, maxWaitingTime=1800000) {
     if (isTargetMessageFoundFlag) {
         console.log("The target message was found on first call, quiting...")
         return;
     }
     
     let caller = setInterval(function(){
-        checkTargetMessageFromHistory(targetUserId, targetMessage, lastReadEventID, false);
+        checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventID, false);
         //Provide 3 sec for checkTargetMessageFromHistory to process and make signal
         setTimeout(function() {
             if (isTargetMessageFoundFlag) {
@@ -59,13 +60,13 @@ function setupIntervalCheck(targetUserId, targetMessage, interval=120000, maxWai
 
     let timeout = setTimeout(function() {
         clearInterval(caller);
-        console.log("clearInterval...")
+        console.log("Max waiting time has passed, clearInterval...")
         return;
-    }, maxWaitingTime-2000);
+    }, maxWaitingTime);
     
 }
 
-function checkTargetMessageFromHistory(targetUserId, targetMessage, lastReadEventId='', isFirstCall=true, nextSyncToken='', page=0) {
+function checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventId='', isFirstCall=true, nextSyncToken='', page=0) {
 
     console.log('This is stream no.' + page);
     requestRoomEventHistory(nextSyncToken).then(
@@ -91,6 +92,7 @@ function checkTargetMessageFromHistory(targetUserId, targetMessage, lastReadEven
                     }
                     if (cur_event.user_id == targetUserId && cur_event.content.body == targetMessage) {
                         isTargetMessageFoundFlag = true;
+                        RequestJudgementCollection.setRiotVerifiedSuccessById(databaseId);
                         console.log('And congratulations! You have found the target message!');
                         return;
                     }
@@ -99,7 +101,7 @@ function checkTargetMessageFromHistory(targetUserId, targetMessage, lastReadEven
                 if (!isFirstCall) {
                     nextSyncToken = result.data.end;
                     page += 1;
-                    return checkTargetMessageFromHistory(targetUserId, targetMessage, lastReadEventId, false, nextSyncToken, page);
+                    return checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventId, false, nextSyncToken, page);
                 }
             }
         },

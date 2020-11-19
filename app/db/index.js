@@ -158,6 +158,11 @@ class RequestJudgementCollection {
         const content = { riotStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }
+    async setRiotVerifiedSuccessById(id) {
+        const filter = { _id: id};
+        const content = { riotStatus: 'verifiedSuccess' };
+        return await this.db.update(this.collectionName, filter, content);
+    }
     async setRiotVerifiedFailed(account, riot) {
         const filter = { account: account, riot: riot };
         const content = { riotStatus: 'verifiedFailed' };
