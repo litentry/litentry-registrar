@@ -143,12 +143,12 @@ class RequestJudgementCollection {
     }
 
     async setTwitterVerifiedSuccess(account, twitter) {
-        const filter = { account: account, twitter: twitter };
+        const filter = { account: account, twitter: twitter, status: { $exists: false } };
         const content = { twitterStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }
     async setTwitterVerifiedFailed(account, twitter) {
-        const filter = { account: account, twitter: twitter };
+        const filter = { account: account, twitter: twitter, status: { $exists: false } };
         const content = { twitterStatus: 'verifiedFailed' };
         return await this.db.update(this.collectionName, filter, content);
     }
@@ -159,7 +159,7 @@ class RequestJudgementCollection {
         return await this.db.update(this.collectionName, filter, content);
     }
     async setRiotVerifiedSuccessById(id) {
-        const filter = { _id: id};
+        const filter = { _id: id };
         const content = { riotStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }

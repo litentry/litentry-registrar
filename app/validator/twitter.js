@@ -35,12 +35,13 @@ class TwitterValidator extends Validator {
                 // TODO Manipulate database, the following code may result in bugs
                 await RequestJudgementCollection.setTwitterVerifiedSuccess(walletAddr, userName);
                 clearInterval(caller);
+                clearTimeout(timeoutGuard);
             } else {
                 logger.debug(`Retry polling twitter message for user ${userName}, account ${walletAddr}...`);
             }
         }, this.config.pollingInterval);
 
-        setTimeout(async () => {
+        const timeoutGuard = setTimeout(async () => {
             // NOTE: We must clear the interval first, otherwise, may occur bugs accidentally.
             clearInterval(caller);
 
@@ -58,12 +59,12 @@ class TwitterValidator extends Validator {
         const limit = 40;
         return new Promise((resolve, reject) => {
             client.get('users/lookup.json', params, (error, msgs) => {
-                if (error || _.isEmpty(msgs)) {
+                if (error || _.isEmpty(msgs) || msgs === undefined) {
                     reject(new Error('Invalid twitter screen name!'));
                 }
                 const userId = msgs[0].id_str;
                 client.get('direct_messages/events/list', { count: limit }, (error, msgs) => {
-                    if (error || _.isEmpty(userId)) {
+                    if (error || _.isEmpty(userId) || msgs === undefined) {
                         reject(new Error('Cannot find the DM from this user'));
                     }
                     const found = msgs.events.find(
