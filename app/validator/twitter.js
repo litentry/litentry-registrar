@@ -17,10 +17,10 @@ class TwitterValidator extends Validator {
 
     async invoke(userName, walletAddr) {
         const client = new TwitterApi({
-            consumer_key: this.config.consumerKey,
-            consumer_secret: this.config.consumerSecret,
-            access_token_key: this.config.tokenKey,
-            access_token_secret: this.config.tokenSecret,
+            consumer_key: this.config.twitterValidator.consumerKey,
+            consumer_secret: this.config.twitterValidator.consumerSecret,
+            access_token_key: this.config.twitterValidator.tokenKey,
+            access_token_secret: this.config.twitterValidator.tokenSecret,
         });
 
         logger.debug('Twitter verification task starts running ...');

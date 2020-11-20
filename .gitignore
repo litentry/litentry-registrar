@@ -109,3 +109,4 @@ data/*
 
 # Vim temp file
 *.swp
+tags
