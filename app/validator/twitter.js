@@ -84,7 +84,7 @@ const validator = new TwitterValidator(config.twitterValidator);
 
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
-    await validator.invoke(info.twitter, info.account);
+    validator.invoke(info.twitter, info.account);
     logger.debug('Twitter verification task starts running ...');
 });
 
