@@ -17,10 +17,10 @@ class TwitterValidator extends Validator {
 
     async invoke(userName, walletAddr) {
         const client = new TwitterApi({
-            consumer_key: this.config.twitterValidator.consumerKey,
-            consumer_secret: this.config.twitterValidator.consumerSecret,
-            access_token_key: this.config.twitterValidator.tokenKey,
-            access_token_secret: this.config.twitterValidator.tokenSecret,
+            consumer_key: this.config.consumerKey,
+            consumer_secret: this.config.consumerSecret,
+            access_token_key: this.config.tokenKey,
+            access_token_secret: this.config.tokenSecret,
         });
 
         logger.debug('Twitter verification task starts running ...');
@@ -33,7 +33,7 @@ class TwitterValidator extends Validator {
                     `Twitter verification for user ${userName}, account ${walletAddr} passed, clear interval...`
                 );
                 // TODO Manipulate database, the following code may result in bugs
-                await RequestJudgementCollection.setTwitterVerificationSuccess(walletAddr, userName);
+                await RequestJudgementCollection.setTwitterVerifiedSuccess(walletAddr, userName);
                 clearInterval(caller);
             } else {
                 logger.debug(`Retry polling twitter message for user ${userName}, account ${walletAddr}...`);
@@ -44,7 +44,10 @@ class TwitterValidator extends Validator {
             // NOTE: We must clear the interval first, otherwise, may occur bugs accidentally.
             clearInterval(caller);
 
-            logger.debug('Twitter polling reached time out, clear interval...');
+            await RequestJudgementCollection.setTwitterVerifiedFailed(walletAddr, userName);
+            logger.debug(
+                `Twitter polling for user ${userName} reached time out, set verification as failed and clear interval...`
+            );
             // Manipulate database, the following code may result in bugs
             // await requestJudgementCollection.setTwitterVerificationFailed(walletAddr, userName)
         }, this.config.maxPollingTime);
@@ -76,7 +79,7 @@ class TwitterValidator extends Validator {
     }
 }
 
-const validator = new TwitterValidator(config.twitterValidater);
+const validator = new TwitterValidator(config.twitterValidator);
 
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
