@@ -171,6 +171,7 @@ class RequestJudgementCollection {
 
     async cancel(account) {
         /* The account is still not verified, we can set it to be canceled  */
+        await this.db.connect();
         const _collection = this.db.database.collection(this.collectionName);
         const results = await _collection.updateMany(
             { account: account, $and: [{ status: { $ne: 'verifiedSuccess' } }, { status: { $ne: 'canceled' } }] },
