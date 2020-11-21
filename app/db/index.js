@@ -153,21 +153,17 @@ class RequestJudgementCollection {
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async setRiotVerifiedSuccess(account, riot) {
-        const filter = { account: account, riot: riot };
-        const content = { riotStatus: 'verifiedSuccess' };
-        return await this.db.update(this.collectionName, filter, content);
-    }
     async setRiotVerifiedSuccessById(id) {
         const filter = { _id: id };
         const content = { riotStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }
-    async setRiotVerifiedFailed(account, riot) {
-        const filter = { account: account, riot: riot };
+
+    async setRiotVerifiedFailedById(id) {
+        const filter = { _id: id };
         const content = { riotStatus: 'verifiedFailed' };
         return await this.db.update(this.collectionName, filter, content);
-    }
+    }    
 
     async cancel(account) {
         /* The account is still not verified, we can set it to be canceled  */

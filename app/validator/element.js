@@ -16,21 +16,21 @@ class ElementValidator extends Validator {
     }
 
     async invoke(targetUser, targetWalletAddr, databaseId) {
-        startCheckingTargetMessage(targetUser, targetWalletAddr, databaseId);
+        await startCheckingTargetMessage(targetUser, targetWalletAddr, databaseId);
     }
 }
 
-const validator = new ElementValidator(config);
+const elementValidator = new ElementValidator(config);
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);
     const targetRiotUserId = info.riot;
     const targetWalletAddress = info.account;
     const dbId = info._id;
-    await validator.invoke(targetRiotUserId, targetWalletAddress, dbId);
+    await elementValidator.invoke(targetRiotUserId, targetWalletAddress, dbId);
 });
 
-module.exports = validator;
+module.exports = elementValidator;
 
 function startCheckingTargetMessage(
     targetUserId,
@@ -50,8 +50,8 @@ function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval = 
         return;
     }
 
-    let caller = setInterval(function () {
-        checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventID, false);
+    let caller = setInterval(async function () {
+        await checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventID, false);
         //Provide 3 sec for checkTargetMessageFromHistory to process and make signal
         setTimeout(function () {
             if (isTargetMessageFoundFlag) {
@@ -63,9 +63,12 @@ function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval = 
         }, 3000);
     }, interval);
 
-    let timeout = setTimeout(function () {
+    let timeout = setTimeout(async function () {
         clearInterval(caller);
-        console.log('Max waiting time has passed, clearInterval...');
+        await RequestJudgementCollection.setRiotVerifiedFailedById(databaseId);
+        logger.debug(
+            `Riot polling for user ${targetUserId} reached time out, set verification as failed and clear interval...`
+        );
         return;
     }, maxWaitingTime);
 }
