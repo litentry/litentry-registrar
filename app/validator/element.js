@@ -46,7 +46,7 @@ function startCheckingTargetMessage(
 //Default interval: 2 min; default waiting time: 30 min
 function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval = 120000, maxWaitingTime = 1800000) {
     if (isTargetMessageFoundFlag) {
-        console.log('The target message was found on first call, quiting...');
+        logger.debug('Riot polling: The target message was found on first call, quiting...');
         return;
     }
 
@@ -55,7 +55,7 @@ function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval = 
         //Provide 3 sec for checkTargetMessageFromHistory to process and make signal
         setTimeout(function () {
             if (isTargetMessageFoundFlag) {
-                console.log('The target message was found, quiting...');
+                logger.debug('Riot polling: The target message was found, quiting...');
                 clearInterval(caller);
                 clearTimeout(timeout);
                 return;
@@ -82,48 +82,52 @@ async function checkTargetMessageFromHistory(
     nextSyncToken = '',
     page = 0
 ) {
-    console.log('This is stream no.' + page);
+    // console.log('This is stream no.' + page);
     try {
         const result = await requestRoomEventHistory(nextSyncToken);
-        if (result.data.start === result.data.end) {
-            console.log('You have reached the end of room event history');
-            return;
-        } else {
-            if (page === 0) {
-                lastReadEventID = result.data.chunk[0].event_id;
-            }
-            let i;
-            for (i = 0; i < result.data.chunk.length; i++) {
-                let cur_event = result.data.chunk[i];
-                if (cur_event.event_id == lastReadEventId) {
-                    console.log('There is no more unread event');
-                    return;
+        if (result) {
+            if (result.data.start === result.data.end) {
+                logger.debug('Riot polling: You have reached the end of room event history');
+                return;
+            } else {
+                if (page === 0) {
+                    lastReadEventID = result.data.chunk[0].event_id;
                 }
-                if (cur_event.type === 'm.room.message') {
-                    console.log('------ ' + cur_event.user_id + ' said:');
-                    console.log(cur_event.content);
-                    if (cur_event.user_id === targetUserId && cur_event.content.body === targetMessage) {
-                        isTargetMessageFoundFlag = true;
-                        await RequestJudgementCollection.setRiotVerifiedSuccessById(databaseId);
-                        console.log('And congratulations! You have found the target message!');
+                let i;
+                for (i = 0; i < result.data.chunk.length; i++) {
+                    let cur_event = result.data.chunk[i];
+                    if (cur_event.event_id == lastReadEventId) {
+                        logger.debug('Riot polling: There is no more unread event');
                         return;
                     }
+                    if (cur_event.type === 'm.room.message') {
+                        if (cur_event.user_id === targetUserId && cur_event.content.body === targetMessage) {
+                            isTargetMessageFoundFlag = true;
+                            await RequestJudgementCollection.setRiotVerifiedSuccessById(databaseId);
+                            logger.debug('Riot polling: ------ ' + cur_event.user_id + ' said:');
+                            logger.debug('Riot polling: ' + cur_event.content);
+                            logger.debug('Riot polling: And congratulations! You have found the target message!');
+                            return;
+                        }
+                    }
+                }
+
+                if (!isFirstCall) {
+                    nextSyncToken = result.data.end;
+                    page += 1;
+                    return checkTargetMessageFromHistory(
+                        targetUserId,
+                        targetMessage,
+                        databaseId,
+                        lastReadEventId,
+                        false,
+                        nextSyncToken,
+                        page
+                    );
                 }
             }
-
-            if (!isFirstCall) {
-                nextSyncToken = result.data.end;
-                page += 1;
-                return checkTargetMessageFromHistory(
-                    targetUserId,
-                    targetMessage,
-                    databaseId,
-                    lastReadEventId,
-                    false,
-                    nextSyncToken,
-                    page
-                );
-            }
+        } else {
+            logger.debug(`Riot polling failed, retry polling...`);
         }
     } catch (err) {
         console.log(err);
