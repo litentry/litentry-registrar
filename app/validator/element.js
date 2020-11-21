@@ -36,20 +36,15 @@ function startCheckingTargetMessage(
     targetUserId,
     targetMessage,
     databaseId,
-    interval = 120000,
-    maxWaitingTime = 1800000
+    interval = config.elementValidator.pollingInterval,
+    maxWaitingTime = config.elementValidator.maxPollingTime
 ) {
     checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventID, true);
     setupIntervalCheck(targetUserId, targetMessage, databaseId, interval, maxWaitingTime);
 }
 
 //Default interval: 2 min; default waiting time: 30 min
-function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval = 120000, maxWaitingTime = 1800000) {
-    if (isTargetMessageFoundFlag) {
-        logger.debug('Riot polling: The target message was found on first call, quiting...');
-        return;
-    }
-
+function setupIntervalCheck(targetUserId, targetMessage, databaseId, interval=5000, maxWaitingTime=50000) {
     let caller = setInterval(async function () {
         await checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, lastReadEventID, false);
         //Provide 3 sec for checkTargetMessageFromHistory to process and make signal
@@ -130,7 +125,7 @@ async function checkTargetMessageFromHistory(
             logger.debug(`Riot polling failed, retry polling...`);
         }
     } catch (err) {
-        console.log(err);
+        logger.error('Riot polling: ' + err);
     }
 }
 
