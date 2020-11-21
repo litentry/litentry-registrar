@@ -1,33 +1,34 @@
-'use strict';
-
+const _ = require('lodash');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const LRU = require("lru-cache");
 
 const logger = require('app/logger');
-const config = require('app/config').litentry;
+const config = require('app/config');
 
 
 function createJwtToken(data) {
     let options = {};
-    return jwt.sign(data, 'session_secret', options);
+    if (_.isNil(data.iat)) {
+        options.noTimestamp = true;
+    }
+    if (_.isNil(data.exp)) {
+        options.expiresIn = config.jwt.expiresIn;
+    }
+    return jwt.sign(data, config.jwt.sessionSecret, options);
 }
 
 function decodeJwtToken(token) {
-    const data = jwt.verify(token, 'session_secret');
+    const data = jwt.verify(token, config.jwt.sessionSecret);
     return data;
 }
 
 function generateNonce(length=6) {
-    let text = "";
-    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for(var i = 0; i < length; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
+    return crypto.randomBytes(length).toString('hex');
 }
 
 
-const waitingTime = config.requestJudgementInterval || 60 * 1000; // 60 seconds
+const waitingTime = config.litentry.requestJudgementInterval || 60 * 1000; // 60 seconds
 const funcCacheSize = 4096;
 var FunctionCache = new LRU(funcCacheSize);
 

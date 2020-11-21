@@ -1,7 +1,3 @@
-'use strict';
-
-// const config = require('app/config');
-
 const EmailValidator = require('app/validator/email');
 const TwitterValidator = require('app/validator/twitter');
 const ElementValidator = require('app/validator/element');
