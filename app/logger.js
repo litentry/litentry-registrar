@@ -14,7 +14,7 @@ if (process.env.NODE_ENV === 'dev') {
 }
 
 if (!fs.existsSync(logPath)) {
-    fs.mkdirSync(logPath);
+    fs.mkdirSync(logPath, { recursive: true });
 }
 
 const myFormat = printf(({ level, message, timestamp }) => {
