@@ -8,8 +8,7 @@ class Validator {
         this.config = config;
     }
 
-    async invoke() {
-    }
+    async invoke() {}
 }
 
 module.exports = Validator;

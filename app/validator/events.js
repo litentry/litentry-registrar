@@ -14,5 +14,5 @@ const Event = new EventEmitter();
 // });
 
 module.exports = {
-    ValidatorEvent: Event
+    ValidatorEvent: Event,
 };

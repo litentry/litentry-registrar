@@ -1,7 +1,5 @@
 'use strict';
 
-require('colors'); // required by .green, don't remove, TODO: introduce eslint to disable warning for this line
-
 // Ensure the NODE_ENV is loaded from .env
 delete process.env.NODE_ENV;
 const result = require('dotenv').config({ debug: true });
@@ -9,33 +7,33 @@ const result = require('dotenv').config({ debug: true });
 if (result.error) {
     throw result.error;
 }
-
+const chalk = require('chalk');
 const cluster = require('cluster');
 
 const Chain = require('app/chain');
 const logger = require('app/logger');
 
 if (cluster.isMaster) {
-    logger.debug(`Master process ${process.pid} is running...`.green);
+    logger.debug(chalk.green(`Master process ${process.pid} is running...`));
     // Fork workers
     let provideJudgementWorker = cluster.fork({ type: 'provide_judgement_process' });
     let webServerWorker = cluster.fork({ type: 'web_server_process' });
 
     cluster.on('exit', (worker, code, signal) => {
         if (signal) {
-            logger.warn(`Worker was killed by signal: ${signal}`.yellow);
+            logger.warn(chalk.yellow(`Worker was killed by signal: ${signal}`));
         } else if (code != 0) {
-            logger.warn(`Worker exited with error code: ${code}`.yellow);
+            logger.warn(chalk.yellow(`Worker exited with error code: ${code}`));
         }
 
         if (worker.id === provideJudgementWorker.id) {
-            logger.info('Restarting provideJudgement worker...'.green);
+            logger.info(chalk.green('Restarting provideJudgement worker...'));
             provideJudgementWorker = cluster.fork({ type: 'provide_judgement_process' });
         } else if (worker.id == webServerWorker.id) {
-            logger.info('Restarting webServer worker...'.green);
+            logger.info(chalk.green('Restarting webServer worker...'));
             webServerWorker = cluster.fork({ type: 'web_server_process' });
         } else {
-            logger.info(`Invalid worker ${worker.id} received`.red);
+            logger.info(chalk.red(`Invalid worker ${worker.id} received`));
         }
     });
 } else if (cluster.worker.process.env.type == 'provide_judgement_process') {
@@ -132,11 +130,12 @@ if (cluster.isMaster) {
     /* Listen on port */
     app.listen(config.port);
     /* Log some basic information */
-    logger.info(`Process ${process.pid} is listening on: ${config.port}`.green);
-    logger.info(`NODE_ENV: ${process.env.NODE_ENV}`.green);
-    /* Start chain event listener */
+    logger.info(chalk.green(`Process ${process.pid} is listening on: ${config.port}`));
+    logger.info(chalk.green(`NODE_ENV: ${process.env.NODE_ENV}`));
+    /* Auto Restart chain event listener */
     (async () => {
-        await Chain.eventListenerStart();
+        await Chain.eventListenerAutoRestart();
+        // await Chain.eventListenerStart();
     })();
 } else {
     logger.error(`Unknown worker type ${cluster.worker.process.env.type}`);

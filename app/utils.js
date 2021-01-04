@@ -1,11 +1,10 @@
 const _ = require('lodash');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const LRU = require("lru-cache");
+const LRU = require('lru-cache');
 
 const logger = require('app/logger');
 const config = require('app/config');
-
 
 function createJwtToken(data) {
     let options = {};
@@ -23,10 +22,9 @@ function decodeJwtToken(token) {
     return data;
 }
 
-function generateNonce(length=6) {
+function generateNonce(length = 6) {
     return crypto.randomBytes(length).toString('hex');
 }
-
 
 const waitingTime = config.litentry.requestJudgementInterval || 60 * 1000; // 60 seconds
 const funcCacheSize = 4096;
@@ -66,5 +64,5 @@ module.exports = {
     createJwtToken: createJwtToken,
     decodeJwtToken: decodeJwtToken,
     generateNonce: generateNonce,
-    throttle: throttle
-}
+    throttle: throttle,
+};

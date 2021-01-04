@@ -163,7 +163,7 @@ class RequestJudgementCollection {
         const filter = { _id: id };
         const content = { riotStatus: 'verifiedFailed' };
         return await this.db.update(this.collectionName, filter, content);
-    }    
+    }
 
     async cancel(account) {
         /* The account is still not verified, we can set it to be canceled  */
