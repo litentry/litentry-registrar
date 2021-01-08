@@ -502,62 +502,6 @@ class Chain {
   }
 }
 
-// async function setupRegistrar(chain, registrarAccount) {
-
-//   /**
-//    * check if there is a registrar
-//    */
-//   let registrars = await chain.identityRegistrars();
-//   if (registrars.length > 0) {
-//     for (let registrar of registrars) {
-//       if (`${registrar.account}` === registrarAccount) {
-//         await chain.disconnect();
-//         return;
-//       }
-//     }
-//   }
-//   /**
-//    * create a proposal for registrar
-//    */
-//   let publicProps = await chain.democracyPublicProps();
-//   await sleep(DEFAULT_SLEEP_INTERVAL);
-//   if (`${publicProps.length}` === '0') {
-//     await chain.democracyNotePreimage(chain.alice, chain.identityAddRegistrar, [registrarAccount]);
-//     await sleep(DEFAULT_SLEEP_INTERVAL);
-//     await chain.democracyPropose(chain.alice, chain.identityAddRegistrar, [registrarAccount]);
-//     await sleep(DEFAULT_SLEEP_INTERVAL);
-//   }
-//   let referendumInfo = await chain.democracyReferendumInfoOf();
-//   while (`${referendumInfo.length}` === '0') {
-//     await sleep(DEFAULT_SLEEP_INTERVAL);
-//     referendumInfo = await chain.democracyReferendumInfoOf();
-//   }
-//   let lastReferendumInfo = referendumInfo[referendumInfo.length-1];
-//   if (lastReferendumInfo.Finished && lastReferendumInfo.Finished.approved === false) {
-//     console.log(`Some error`);
-//     return;
-//   } else {
-//     await chain.democracyVote(chain.alice);
-//     await sleep(DEFAULT_SLEEP_INTERVAL);
-//   }
-//   /**
-//    * query the result of registrar
-//    */
-//   registrars = await chain.identityRegistrars();
-//   while (registrars.length == 0) {
-//     await sleep(DEFAULT_SLEEP_INTERVAL);
-//     registrars = await chain.identityRegistrars();
-//   }
-//   /**
-//    * set registrar fee and query results
-//    */
-//   await chain.identitySetFee(registrarAccount);
-//   await sleep(DEFAULT_SLEEP_INTERVAL);
-//   registrars = await chain.identityRegistrars();
-
-// }
-
-
 (async () => {
   const chain = new Chain(config);
   await chain.connect();
