@@ -1,5 +1,5 @@
 # litentry-registrar
-[![Build Status](https://travis-ci.com/litentry/litentry-registrar.svg?branch=master)](https://travis-ci.com/litentry/litentry-registrar)
+![staging](https://github.com/litentry/litentry-registrar/workflows/staging/badge.svg)
 
 Litentry Polkadot/Kusama Registrar
 
