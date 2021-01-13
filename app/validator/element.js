@@ -28,12 +28,18 @@ class ElementValidator extends Validator {
         this.checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, this.lastReadEventID, true);
         this.setupIntervalCheck(targetUserId, targetMessage, databaseId, interval, maxWaitingTime);
     }
-    
+
     //Default interval: 5 sec; default waiting time: 50 sec
-    setupIntervalCheck(targetUserId, targetMessage, databaseId, interval=5000, maxWaitingTime=50000) {
+    setupIntervalCheck(targetUserId, targetMessage, databaseId, interval = 5000, maxWaitingTime = 50000) {
         const self = this;
         const caller = setInterval(async function () {
-            await self.checkTargetMessageFromHistory(targetUserId, targetMessage, databaseId, self.lastReadEventID, false);
+            await self.checkTargetMessageFromHistory(
+                targetUserId,
+                targetMessage,
+                databaseId,
+                self.lastReadEventID,
+                false
+            );
             //Provide 3 sec for checkTargetMessageFromHistory to process and make signal
             setTimeout(function () {
                 if (self.isTargetMessageFoundFlag) {
@@ -44,7 +50,7 @@ class ElementValidator extends Validator {
                 }
             }, 3000);
         }, interval);
-    
+
         const timeout = setTimeout(async function () {
             clearInterval(caller);
             await RequestJudgementCollection.setRiotVerifiedFailedById(databaseId);
@@ -54,7 +60,7 @@ class ElementValidator extends Validator {
             return;
         }, maxWaitingTime);
     }
-    
+
     async checkTargetMessageFromHistory(
         targetUserId,
         targetMessage,
@@ -95,7 +101,7 @@ class ElementValidator extends Validator {
                             }
                         }
                     }
-    
+
                     if (!isFirstCall) {
                         nextSyncToken = result.data.end;
                         page += 1;
@@ -117,7 +123,7 @@ class ElementValidator extends Validator {
             logger.error('Riot polling: ' + err);
         }
     }
-    
+
     async requestRoomEventHistory(nextSyncToken) {
         const hostUrl = config.elementValidator.hostUrl;
         const roomId = config.elementValidator.roomId;

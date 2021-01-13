@@ -12,7 +12,6 @@ const { RequestJudgementCollection } = require('app/db');
 
 const utils = require('app/utils');
 
-
 class EmailValidator extends Validator {
     constructor(config) {
         super(config);
@@ -29,7 +28,7 @@ class EmailValidator extends Validator {
             to: toAddr,
             from: this.config.username, // Use the email address or domain you verified above
             subject: this.config.subject,
-            html: html
+            html: html,
         };
         let resp = await sgMail.send(msg);
         logger.info(`Email sent, response: ${JSON.stringify(resp)}`);
@@ -45,7 +44,5 @@ ValidatorEvent.on('handleEmailVerification', async (info) => {
     await validator.invoke(info.email, token);
     await RequestJudgementCollection.setEmailVerifiedPendingById(info._id, { nonce: nonce });
 });
-
-
 
 module.exports = validator;

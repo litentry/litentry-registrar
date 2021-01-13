@@ -15,6 +15,11 @@ Litentry Polkadot/Kusama Registrar
     ```
 
     See [git-crypt](https://github.com/AGWA/git-crypt) for details
+- Add a new registrar Account on our development chain
+
+   ```
+   node setup.js
+   ```
 
 - Install node packages dependencies
 
@@ -49,8 +54,8 @@ http://ec2-13-229-136-206.ap-southeast-1.compute.amazonaws.com:8080
 
 ## Chain Address
 ```
-wss://13.229.136.206
-ws://13.229.136.206:9944
+wss://18-140-130-138
+ws://ec2-18-140-130-138.ap-southeast-1.compute.amazonaws.com:9944
 ```
 
 ## Useful Links:

@@ -28,17 +28,19 @@ const Judgement = {
     LowQuality: { LowQuality: null },
 };
 
+/**
+ *
+ * @property (Object) config - settings for 'chain' and 'litentry'
+ * @property (*) myself - on behalf of our litentry platform
+ * @property (*) unsubscribeEventlistener - a event listener to a connected chain
+ * @property (*) keyring
+ * @property (*) wsProvider - web socket for tha chain api
+ * @property (*) api - APIs used to interact with chain
+ */
 class Chain {
     /**
      * A wrapped APIs for block chain
      * @constructor
-     *
-     * @param (Object) config - settings for 'chain' and 'litentry'
-     * @param (*) myself - on behalf of our litentry platform
-     * @param (*) unsubscribeEventlistener - a event listener to a connected chain
-     * @param (*) keyring
-     * @param (*) wsProvider - web socket for tha chain api
-     * @param (*) api - APIs used to interact with chain
      */
     constructor(config) {
         this.config = config;
@@ -47,13 +49,19 @@ class Chain {
         this.myself = null;
 
         this.unsubscribeEventListener = null;
+        this.firstConnected = false;
     }
 
     /**
      * Connect to a configured block chain, such as polkadot, westend or local chain.
      */
     async connect() {
-        this.api = await ApiPromise.create({ provider: this.wsProvider });
+        if (!this.api) {
+            this.api = await ApiPromise.create({ provider: this.wsProvider });
+        } else {
+            await this.api.connect();
+        }
+
         if (!this.myself) {
             if (config.litentry.privateKey) {
                 logger.debug('Use private key');
@@ -69,55 +77,6 @@ class Chain {
         return this.api;
     }
 
-    async sendTransaction(toAddr, amount) {
-        await this.connect();
-        const transfer = this.api.tx.balances.transfer(toAddr, amount);
-        const hash = await transfer.signAndSend(this.myself);
-        logger.info(`Transfer send with hash: ${hash.toHex()}`);
-    }
-
-    /**
-     * @deprecated
-     * @param {Object} info info is an object associated with user's identity. For example,
-     * { display: 'test', email: 'test@example.com', riot: 'riot', twitter: 'twitter', web: 'http://test.com' }
-     */
-    async setIdentity(info) {
-        await this.connect();
-        // NOTE: we only support following fields at this moment.
-        const validKeys = new Set(['email', 'twitter', 'riot', 'display', 'web']);
-        const keys = _.keys(info);
-        for (let key of keys) {
-            if (!validKeys.has(key)) {
-                throw Error(`Unexcepted identity info key: ${key}`);
-            }
-        }
-
-        info = _.mapValues(info, function (elem) {
-            return { Raw: elem };
-        });
-        const transfer = await this.api.tx.identity.setIdentity(info);
-        const hash = await transfer.signAndSend(this.myself);
-
-        logger.info('SetIdentity, Transfer sent with hash', hash.toHex());
-        return transfer;
-    }
-
-    async identityOf(accountID) {
-        await this.connect();
-        const resp = await this.api.query.identity.identifyOf(accountID);
-        logger.debug(`Identity Of ${accountID}: ${resp.toString()}`);
-        return resp.toString();
-    }
-
-    async blockWatcher() {
-        await this.connect();
-        const unsubscribeBlockerWatcher = await this.api.rpc.chain.subscribeNewHeads(async (header) => {
-            console.log(`Chain is at block: #${header.number}`);
-        });
-
-        return unsubscribeBlockerWatcher;
-    }
-
     /**
      * Start event listener
      */
@@ -127,9 +86,9 @@ class Chain {
             return this.unsubscribeEventListener;
         }
 
-        logger.debug('[EventListenerStart] Starting event listener...');
+        // logger.debug('[EventListenerStart] Starting event listener...');
         await this.connect();
-
+        logger.debug('[EventListenerStart] Starting event listener...');
         this.unsubscribeEventListener = this.api.query.system.events((events) => {
             // Loop through the Vec<EventRecord>
             events.forEach((record) => {
@@ -191,8 +150,22 @@ class Chain {
      */
     async eventListenerRestart() {
         logger.debug('[EventListenerRestart] Restarting event listener...');
-        this.eventListenerStop();
-        this.eventListenerStart();
+        await this.eventListenerStop();
+        await this.eventListenerStart();
+    }
+
+    /**
+     * Auto Restart event listener
+     */
+    async eventListenerAutoRestart() {
+        if (this.firstConnected) {
+            this.wsProvider.on('disconnected', async () => {
+                await this.eventListenerRestart();
+            });
+        } else {
+            await this.eventListenerStart();
+            this.firstConnected = true;
+        }
     }
 
     /**
@@ -242,13 +215,6 @@ class Chain {
                 }
             });
         });
-    }
-
-    async queryBlockByBlockHash(blockHash) {
-        await this.connect();
-
-        const block = await this.api.rpc.chain.getBlock(blockHash);
-        return block;
     }
 }
 
