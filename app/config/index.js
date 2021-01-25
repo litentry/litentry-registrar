@@ -9,6 +9,8 @@ if (process.env.NODE_ENV === 'dev') {
     module.exports = require('app/config/dev');
 } else if (process.env.NODE_ENV === 'staging') {
     module.exports = require('app/config/staging');
+} else if (process.env.NODE_ENV === 'production') {
+    module.exports = require('app/config/production');
 } else {
     // Invalid node enviroment type, crash this application
     throw Error('Not an invalid environment');

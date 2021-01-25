@@ -120,10 +120,6 @@ class RequestJudgementCollection {
         return results;
     }
 
-    async queryByAccount(account) {
-        return await this.query(this.collectionName, { account: account });
-    }
-
     async setEmailVerifiedPendingById(id, addition = {}) {
         const filter = { _id: id };
         const content = { emailStatus: 'pending', ...addition };
@@ -177,6 +173,22 @@ class RequestJudgementCollection {
     }
 }
 
+class RiotCollection {
+    constructor(db) {
+        this.db = db;
+        this.collectionName = 'riot';
+    }
+
+    async insert(content) {
+        return await this.db.insert(this.collectionName, content);
+    }
+
+    async query(filter) {
+        const results = await this.db.query(this.collectionName, filter);
+        return results;
+    }
+}
+
 if (!config) {
     throw new Error('Add configuration for mongodb.');
 }
@@ -186,4 +198,5 @@ const storage = new MongodbStorage(config);
 module.exports = {
     Storage: storage,
     RequestJudgementCollection: new RequestJudgementCollection(storage),
+    RiotCollection: new RiotCollection(storage),
 };
