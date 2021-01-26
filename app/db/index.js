@@ -36,7 +36,15 @@ class MongodbStorage {
         this.database = this.client.db(this.config.dbName);
         logger.info(`[MongodbStorage.connect] connect to mongodb successfully.`);
     }
-
+    /**
+     * Disconnect from mongodb
+     */
+    async disconnect() {
+        if (this.client) {
+            await this.client.close();
+            this.client = null;
+        }
+    }
     /**
      * @param {String} collection - the collection to be queried inside mongodb database
      * @param {*} filter - a filter applied to obtain specific rows
@@ -179,8 +187,8 @@ class RiotCollection {
         this.collectionName = 'riot';
     }
 
-    async insert(content) {
-        return await this.db.insert(this.collectionName, content);
+    async upsert(riot, content) {
+        return await this.db.update(this.collectionName, { riot: riot }, content);
     }
 
     async query(filter) {

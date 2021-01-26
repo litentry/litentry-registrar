@@ -13,107 +13,86 @@ const { RequestJudgementCollection, RiotCollection } = require('app/db');
 class ElementValidator extends Validator {
     constructor(config) {
         super(config);
+        const { accessToken, userId, homeServerUrl } = config;
+        this.client = sdk.createClient({
+            baseUrl: homeServerUrl,
+            accessToken: accessToken,
+            userId: userId,
+            cacheLevel: -1,
+        });
+        this.chainName = 'kusama';
+        this.maxRetries = 10;
+        this.pollingRoomMessageInterval = 3;
+        this.pollingRoomInterval = 2;
     }
 
     async invoke(account, riotAccount, dbId) {
-        let self = this;
+        /// Check if this judgement already verified
         const found = await RequestJudgementCollection.query({ _id: dbId });
         if ((! _.isEmpty(found)) && (found[0].riotStatus === 'verifiedSuccess')) {
             logger.debug(`Already verified riot field successfully.`);
             return;
         }
 
-        const { accessToken, userId, homeServerUrl } = config;
-        const client = sdk.createClient({
-            baseUrl: homeServerUrl,
-            accessToken: accessToken,
-            userId: userId,
-            cacheLevel: -1,
-        });
+        let self = this;
         let roomId = null;
+        let client = self.client;
 
-        client.on('sync', async function(state /*, prevState, res */) {
-            // NOTE: state will be 'PREPARED' when the client is ready to use
-            if (state === 'PREPARED') {
-                const results = await RiotCollection.query({ riot: riotAccount });
-                if ((! _.isEmpty(results)) && results[0].roomId) {
-                    roomId = results[0].roomId;
-                    logger.debug(`Already has room for riot user: ${riotAccount}, corresponding address: ${account},room id: ${roomId}`);
-                } else {
-                    const { room_id } = await client.createRoom({
-                        preset: "trusted_private_chat",
-                        invite: [riotAccount],
-                        is_direct: true,
-                    });
+        /// If the client is not running.
+        /// Start the client
+        if (! client.clientRunning) {
+            /// Capture user input events
+            client.on("Room.timeline", async function(/* event, room, toStartOfTimeline, removed, data */) {
+                /// NOTE: Do nothing, but listening for incoming messages. Do not remove !
+            });
 
-                    roomId = room_id;
-                    logger.debug(`Create a new room for riot user: ${riotAccount}, corresponding address: ${account}, room id: ${roomId}`);
-                    await RiotCollection.insert({ riot: riotAccount, account: account, roomId: roomId });
-                }
-                const room = client.getRoom(roomId);
-                // console.log(room);
-                const joinedMembers = room.getMembersWithMembership('join');
-                const isNotJoined = _.isEmpty(_.find(joinedMembers, ['userId', riotAccount]));
+            await client.startClient();
+        }
 
-                if (isNotJoined) {
-                    logger.debug(`Riot user ${riotAccount} isn't joined the room.`);
-                    const invitedMembers = room.getMembersWithMembership('invite');
-                    if ((! _.isEmpty(invitedMembers)) && (invitedMembers[0].userId === riotAccount)) {
-                        logger.debug(`Already invited user ${riotAccount}, no need to invite again`);
-                    } else {
-                        logger.debug(`Inviting user ${riotAccount}`);
-                        await self.invite(client, roomId, riotAccount);
-                    }
-                } else {
-                    logger.debug(`Riot user ${riotAccount} joined the room.`);
-                }
-                await self.sendMessage(client, roomId, 'Please reply your address: ');
+        const results = await RiotCollection.query({ riot: riotAccount, account: account });
+        if ((! _.isEmpty(results)) && results[0].roomId) {
+            roomId = results[0].roomId;
+            logger.debug(`Already has room for riot user: ${riotAccount}, corresponding address: ${account},room id: ${roomId}`);
+        } else {
+            roomId = await self.createRoom(client, riotAccount, account);
+        }
+        /// Fetch this room from remote.
+        /// Make sure we obtain the room instance
+        /// If we cannot fetch the room instance, it means this room is destroyed by user (admin) manually.
+        /// We need to create a new one.
+        let room = await self.getRoom(client, roomId);
+        if (_.isEmpty(room)) {
+            logger.debug(`Create a new room since the old room ${roomId} isn't found`);
+            roomId = await self.createRoom(client, riotAccount, account);
+            room = await self.getRoom(client, roomId);
+        }
+
+        /// Check if the target riot account join our room or not
+        /// If yes, we needn't to invite him/her again
+        /// otherwise, we send an invitation request to target riot user
+        const joinedMembers = room.getMembersWithMembership('join');
+        const isNotJoined = _.isEmpty(_.find(joinedMembers, ['userId', riotAccount]));
+
+        if (isNotJoined) {
+            logger.debug(`Riot user ${riotAccount} isn't joined the room.`);
+            const invitedMembers = room.getMembersWithMembership('invite');
+            if ((! _.isEmpty(invitedMembers)) && (invitedMembers[0].userId === riotAccount)) {
+                logger.debug(`Already invited user ${riotAccount}, no need to invite again`);
             } else {
-                console.log(`Unknown state: ${state}`);
+                logger.debug(`Inviting user ${riotAccount}`);
+                await self.invite(client, roomId, riotAccount);
             }
-        });
-
-        // Capture user input events
-        client.on("Room.timeline", async function(event, room /*, toStartOfTimeline, removed, data */) {
-            if (_.isEmpty(roomId)) {
-                return;
-            }
-            if (event.getType() === 'm.room.message' &&
-                event.event.sender === riotAccount &&
-                roomId === room.roomId
-               ) {
-
-                logger.debug(`Receive input from riot user ${riotAccount}, input is: ${event.event.content.body}`);
-
-                // Compare user's inputs with his account on chain
-                if (account === event.event.content.body.trim()) {
-                    // Verified correctly
-                    await RequestJudgementCollection.setRiotVerifiedSuccessById(dbId);
-                    await self.sendMessage(client, roomId, 'Verified successfully.');
-                } else {
-                    // Verified correctly
-                    await self.sendMessage(client, roomId, 'You account on chain is mismatched.');
-                }
-            }
-        });
-
-        // client.on("RoomMember.membership", async function(event, member /*, oldMembership*/) {
-        //     let roomId = '!xdKhDisLEwtxBryqyQ:matrix.org';
-        //     if (event.event.room_id != roomId ||
-        //         member.userId === '@litentry-bot:matrix.org') {
-        //         return;
-        //     }
-        //     if (member.membership !== 'join' ||
-        //         member.membership !== 'invite') {
-        //         logger.debug(`Invite user ${member.userId} ...`);
-        //         await self.invite(client, roomId, member.userId);
-        //     } else {
-        //         logger.debug(`No need to invite a user ${member.userId}`);
-        //     }
-        // });
-
-        // Start the client
-        await client.startClient();
+        } else {
+            logger.debug(`Riot user ${riotAccount} joined the room.`);
+        }
+        /// Send prompt message to riot user
+        logger.debug(`Send prompt message to riot user: ${riotAccount}, roomId: ${roomId}`);
+        let messageSentTimestamp = Date.now();
+        await self.sendMessage(client, roomId, 'Please reply your address: ');
+        /// Poll user's input
+        await self.pollRoomMessage(room, riotAccount, account, dbId, messageSentTimestamp);
+        /// We keep this connection alive. Never close it
+        // await client.stopClient();
     }
 
     async invite(client, roomId, riotAccount) {
@@ -143,14 +122,86 @@ class ElementValidator extends Validator {
             });
         });
     }
+    async createRoom(client, riotAccount, account) {
+        const { room_id } = await client.createRoom({
+            preset: "trusted_private_chat",
+            invite: [riotAccount],
+            is_direct: true,
+        });
+
+        logger.debug(`Create a new room for riot user: ${riotAccount}, room id: ${room_id}`);
+        await RiotCollection.upsert(riotAccount, { roomId: room_id, riot: riotAccount, account: account });
+        return room_id;
+    }
+    async getRoom(client, roomId) {
+        let self = this;
+        return new Promise((resolve) => {
+            let retry = 0;
+            let room = null;
+            let handler = setInterval(() => {
+                if (_.isEmpty(room)) {
+                    logger.debug(`Try to retrive room by ${roomId}`);
+                    room = client.getRoom(roomId);
+                    retry += 1;
+                    if (! _.isEmpty(room) || retry > self.maxRetries) {
+                        logger.debug(`Fetched room by ${roomId} with retry count: ${retry}`);
+                        clearInterval(handler);
+                        resolve(room);
+                    }
+                } else {
+                    clearInterval(handler);
+                    resolve(room);
+                }
+            }, self.pollingRoomInterval * 1000);
+        });
+    }
+    async pollRoomMessage(room, riotAccount, account, dbId, messageSentTimestamp) {
+        /// Sanity check the room value
+        if (_.isEmpty(room)) {
+            logger.warn(`Room shouldn't be empty. Bug!`);
+            return;
+        }
+
+        let self = this;
+        let client = self.client;
+
+        return new Promise((resolve) => {
+            let retry = 0;
+            let handler = setInterval(async () => {
+                for (let event of room.timeline) {
+                    if (event.getType() === 'm.room.message' &&
+                        event.event.sender === riotAccount &&
+                        event.event.origin_server_ts >= messageSentTimestamp
+                       ) {
+                        logger.debug(`Receive input from riot user ${event.event.sender}, input is: ${event.event.content.body}`);
+                        if (account === event.event.content.body.trim()) {
+                            await RequestJudgementCollection.setRiotVerifiedSuccessById(dbId);
+                            await self.sendMessage(client, room.roomId, 'Verified successfully.');
+                            clearInterval(handler);
+                            resolve(true);
+                        } else {
+                            await self.sendMessage(client, room.roomId, `Your account is mismatched. Please input the right account on ${self.chainName}`);
+                        }
+                    }
+                }
+                retry += 1;
+                if (retry > self.maxRetries) {
+                    clearInterval(handler);
+                    resolve(false);
+                }
+            }, 1000 * self.pollingRoomMessageInterval);
+        })
+    }
 }
 
 const elementValidator = new ElementValidator(config);
 (async () => {
     const account = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
     const riotAccount = '@zxchen:matrix.org';
-    const dbId = 1;
-    await elementValidator.invoke(account, riotAccount, dbId);
+    await elementValidator.invoke(account, riotAccount, 1);
+    console.log('--------------------------------------------------------------------------------');
+    // await elementValidator.invoke(account, riotAccount, 2);
+    // console.log('--------------------------------------------------------------------------------');
 })();
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
