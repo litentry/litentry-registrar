@@ -50,7 +50,7 @@ class ElementValidator extends Validator {
             roomId = results[0].roomId;
             logger.debug(`Already has room for riot user: ${riotAccount}, corresponding address: ${account},room id: ${roomId}`);
         } else {
-            roomId = await self.createRoom(client, riotAccount, account);
+            roomId = await self.createRoom(riotAccount, account);
         }
         /// Fetch this room from remote.
         /// Make sure we obtain an avaiable room instance
@@ -92,7 +92,7 @@ class ElementValidator extends Validator {
         /// Send prompt message to riot user
         let messageSentTimestamp = Date.now();
         logger.debug(`Send prompt message to riot user: ${riotAccount}, roomId: ${roomId} at timestamp: ${messageSentTimestamp}`);
-        await self.sendMessage(client, roomId, 'Please reply with your on-chain account: ');
+        await self.sendMessage(roomId, 'Please reply with your on-chain account: ');
         /// Poll user's input
         await self.pollRoomMessage(room, riotAccount, account, dbId, messageSentTimestamp);
         /// We keep this connection alive. Never close it
@@ -140,17 +140,19 @@ class ElementValidator extends Validator {
     }
     async createRoom(riotAccount, account) {
         let self = this;
+        logger.debug(`Create a new room for riot user: ${riotAccount}, corresponding account is: ${account}`);
         const { room_id } = await self.client.createRoom({
             preset: "trusted_private_chat",
             invite: [riotAccount],
             is_direct: true,
         });
 
-        logger.debug(`Create a new room for riot user: ${riotAccount}, room id: ${room_id}`);
+        logger.debug(`room id: ${room_id}`);
+
         await RiotCollection.upsert(riotAccount, { roomId: room_id, riot: riotAccount, account: account });
         return room_id;
     }
-    async getRoom(client, roomId) {
+    async getRoom(roomId) {
         let self = this;
         return new Promise((resolve) => {
             let retry = 0;
@@ -158,7 +160,7 @@ class ElementValidator extends Validator {
             let handler = setInterval(() => {
                 if (_.isEmpty(room)) {
                     logger.debug(`Try to retrive room by ${roomId}`);
-                    room = client.getRoom(roomId);
+                    room = self.client.getRoom(roomId);
                     retry += 1;
                     if (! _.isEmpty(room) || retry > self.maxRetries) {
                         logger.debug(`Fetched room by ${roomId} with retry count: ${retry}`);
@@ -180,7 +182,6 @@ class ElementValidator extends Validator {
         }
 
         let self = this;
-        let client = self.client;
 
         return new Promise((resolve) => {
             let retry = 0;
@@ -194,10 +195,10 @@ class ElementValidator extends Validator {
                         if (account === event.event.content.body.trim()) {
                             clearInterval(handler);
                             await RequestJudgementCollection.setRiotVerifiedSuccessById(dbId);
-                            await self.sendMessage(client, room.roomId, 'Verified successfully.');
+                            await self.sendMessage(room.roomId, 'Verified successfully.');
                             resolve(true);
                         } else {
-                            await self.sendMessage(client, room.roomId, `Your account is mismatched. Please input the right account on ${self.chainName}`);
+                            await self.sendMessage(room.roomId, `Your account is mismatched. Please input the right account on ${self.chainName}`);
                         }
                     }
                 }
@@ -214,12 +215,25 @@ class ElementValidator extends Validator {
 
 const elementValidator = new ElementValidator(config);
 
-// (async () => {
-//     const account = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-//     const riotAccount = '@zxchen:matrix.org';
-//     await elementValidator.invoke(account, riotAccount, 1);
-//     console.log('--------------------------------------------------------------------------------');
-// })();
+(async () => {
+    const interval = 10;
+
+    setInterval(async () => {
+        const requests = await RequestJudgementCollection.query(
+            { $and: [{ riotStatus: { $ne: 'verifiedSuccess' } }, { riot: { $ne: null } }] }
+        );
+        let promises = [];
+        for (let request of requests) {
+            console.log('request.riot: ', request.riot);
+            promises.push(elementValidator.invoke(request.account, request.riot, request._id));
+        }
+        if (! _.isEmpty(promises)) {
+            await Promise.all(promises);
+            promises.length = 0;
+        }
+        logger.debug(`Run verified riot field for ${requests.length} judgement requests.`);
+    }, 1000 * interval);
+})();
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);

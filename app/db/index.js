@@ -30,11 +30,13 @@ class MongodbStorage {
         } else {
             endpoint = `mongodb://${this.config.host}:${this.config.port}`;
         }
-
         this.client = new MongoClient(endpoint);
-        await this.client.connect();
-        this.database = this.client.db(this.config.dbName);
-        logger.info(`[MongodbStorage.connect] connect to mongodb successfully.`);
+
+        if (! this.client.isConnected()) {
+            await this.client.connect();
+            this.database = this.client.db(this.config.dbName);
+            logger.info(`[MongodbStorage.connect] connect to mongodb successfully.`);
+        }
     }
     /**
      * Disconnect from mongodb
