@@ -9,6 +9,7 @@ const Validator = require('app/validator/base');
 const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection, RiotCollection } = require('app/db');
 
+const utils = require('app/utils');
 
 class ElementValidator extends Validator {
     constructor(config) {
@@ -25,13 +26,13 @@ class ElementValidator extends Validator {
         this.pollingRoomMessageInterval = 3;
         this.pollingRoomInterval = 2;
     }
-    async _invoke(account, riotAccount, dbId) {
+    async _invoke(riotAccount, token) {
         /// Check if this judgement already verified
-        const found = await RequestJudgementCollection.query({ _id: dbId });
-        if ((! _.isEmpty(found)) && (found[0].riotStatus === 'verifiedSuccess')) {
-            logger.debug(`Already verified riot field successfully.`);
-            return;
-        }
+        // const found = await RequestJudgementCollection.query({ _id: dbId });
+        // if ((! _.isEmpty(found)) && (found[0].riotStatus === 'verifiedSuccess')) {
+        //     logger.debug(`Already verified riot field successfully.`);
+        //     return;
+        // }
 
         let self = this;
         let roomId = null;
@@ -45,12 +46,12 @@ class ElementValidator extends Validator {
             await client.startClient();
         }
 
-        const results = await RiotCollection.query({ riot: riotAccount, account: account });
+        const results = await RiotCollection.query({ riot: riotAccount });
         if ((! _.isEmpty(results)) && results[0].roomId) {
             roomId = results[0].roomId;
-            logger.debug(`Already has room for riot user: ${riotAccount}, corresponding address: ${account},room id: ${roomId}`);
+            logger.debug(`Already has room for riot user: ${riotAccount}, room id: ${roomId}`);
         } else {
-            roomId = await self.createRoom(riotAccount, account);
+            roomId = await self.createRoom(riotAccount);
         }
         /// Fetch this room from remote.
         /// Make sure we obtain an avaiable room instance
@@ -59,7 +60,7 @@ class ElementValidator extends Validator {
         let room = await self.getRoom(roomId);
         if (_.isEmpty(room)) {
             logger.debug(`Create a new room since the old room ${roomId} isn't found`);
-            roomId = await self.createRoom(riotAccount, account);
+            roomId = await self.createRoom(riotAccount);
             room = await self.getRoom(roomId);
         }
 
@@ -92,16 +93,26 @@ class ElementValidator extends Validator {
         /// Send prompt message to riot user
         let messageSentTimestamp = Date.now();
         logger.debug(`Send prompt message to riot user: ${riotAccount}, roomId: ${roomId} at timestamp: ${messageSentTimestamp}`);
-        await self.sendMessage(roomId, 'Please reply with your on-chain account: ');
+        // const token = '';
+        const link = `${this.config.callbackEndpoint}?token=${token}`;
+        const msg = `<h4>Verification From Litentry Registrar</h4><a href=\"${link}\">Click me to verify your account</a>`;
+        const content = {
+            body: 'Verification from litentry-bot',
+            formatted_body: msg,
+            format: 'org.matrix.custom.html',
+            msgtype: 'm.text',
+        };
+
+        await self.sendMessage(roomId, content);
         /// Poll user's input
-        await self.pollRoomMessage(room, riotAccount, account, dbId, messageSentTimestamp);
+        // await self.pollRoomMessage(room, riotAccount, account, dbId, messageSentTimestamp);
         /// We keep this connection alive. Never close it
         // await client.stopClient();
     }
-    async invoke(account, riotAccount, dbId) {
+    async invoke(riotAccount, token) {
         let self = this;
         try {
-            self._invoke(account, riotAccount, dbId);
+            self._invoke(riotAccount, token);
         } catch (error) {
             /// We need a method to detect failure
             logger.error(`Unexpected error occurs`);
@@ -121,13 +132,9 @@ class ElementValidator extends Validator {
             });
         });
     }
-    async sendMessage(roomId, body) {
+    async sendMessage(roomId, content) {
         let self = this;
         return new Promise((resolve, reject) => {
-            const content = {
-                body: body,
-                msgtype: 'm.text',
-            };
 
             self.client.sendEvent(roomId, 'm.room.message', content, '', (err, res) => {
                 if (err) {
@@ -138,9 +145,9 @@ class ElementValidator extends Validator {
             });
         });
     }
-    async createRoom(riotAccount, account) {
+    async createRoom(riotAccount) {
         let self = this;
-        logger.debug(`Create a new room for riot user: ${riotAccount}, corresponding account is: ${account}`);
+        logger.debug(`Create a new room for riot user: ${riotAccount}`);
         const { room_id } = await self.client.createRoom({
             preset: "trusted_private_chat",
             invite: [riotAccount],
@@ -149,7 +156,7 @@ class ElementValidator extends Validator {
 
         logger.debug(`room id: ${room_id}`);
 
-        await RiotCollection.upsert(riotAccount, { roomId: room_id, riot: riotAccount, account: account });
+        await RiotCollection.upsert(riotAccount, { roomId: room_id, riot: riotAccount });
         return room_id;
     }
     async getRoom(roomId) {
@@ -174,49 +181,49 @@ class ElementValidator extends Validator {
             }, self.pollingRoomInterval * 1000);
         });
     }
-    async pollRoomMessage(room, riotAccount, account, dbId, messageSentTimestamp) {
-        /// Sanity check the room value
-        if (_.isEmpty(room)) {
-            logger.warn(`Room shouldn't be empty. Bug!`);
-            return;
-        }
+    // async pollRoomMessage(room, riotAccount, account, dbId, messageSentTimestamp) {
+    //     /// Sanity check the room value
+    //     if (_.isEmpty(room)) {
+    //         logger.warn(`Room shouldn't be empty. Bug!`);
+    //         return;
+    //     }
 
-        let self = this;
+    //     let self = this;
 
-        return new Promise((resolve) => {
-            let retry = 0;
-            let handler = setInterval(async () => {
-                for (let event of room.timeline) {
-                    if (event.getType() === 'm.room.message' &&
-                        event.event.sender === riotAccount &&
-                        event.event.origin_server_ts >= messageSentTimestamp
-                       ) {
-                        logger.debug(`Receive input from riot user ${event.event.sender}, input is: ${event.event.content.body}`);
-                        if (account === event.event.content.body.trim()) {
-                            clearInterval(handler);
-                            await RequestJudgementCollection.setRiotVerifiedSuccessById(dbId);
-                            await self.sendMessage(room.roomId, 'Verified successfully.');
-                            resolve(true);
-                        } else {
-                            await self.sendMessage(room.roomId, `Your account is mismatched. Please input the right account on ${self.chainName}`);
-                        }
-                    }
-                }
-                retry += 1;
-                if (retry > self.maxRetries) {
-                    clearInterval(handler);
-                    await RequestJudgementCollection.setRiotVerifiedFailedById(dbId);
-                    resolve(false);
-                }
-            }, 1000 * self.pollingRoomMessageInterval);
-        })
-    }
+    //     return new Promise((resolve) => {
+    //         let retry = 0;
+    //         let handler = setInterval(async () => {
+    //             for (let event of room.timeline) {
+    //                 if (event.getType() === 'm.room.message' &&
+    //                     event.event.sender === riotAccount &&
+    //                     event.event.origin_server_ts >= messageSentTimestamp
+    //                    ) {
+    //                     logger.debug(`Receive input from riot user ${event.event.sender}, input is: ${event.event.content.body}`);
+    //                     if (account === event.event.content.body.trim()) {
+    //                         clearInterval(handler);
+    //                         await RequestJudgementCollection.setRiotVerifiedSuccessById(dbId);
+    //                         await self.sendMessage(room.roomId, 'Verified successfully.');
+    //                         resolve(true);
+    //                     } else {
+    //                         await self.sendMessage(room.roomId, `Your account is mismatched. Please input the right account on ${self.chainName}`);
+    //                     }
+    //                 }
+    //             }
+    //             retry += 1;
+    //             if (retry > self.maxRetries) {
+    //                 clearInterval(handler);
+    //                 await RequestJudgementCollection.setRiotVerifiedFailedById(dbId);
+    //                 resolve(false);
+    //             }
+    //         }, 1000 * self.pollingRoomMessageInterval);
+    //     })
+    // }
 }
 
 const elementValidator = new ElementValidator(config);
 
 (async () => {
-    const interval = 10;
+    const interval = 10000;
 
     setInterval(async () => {
         const requests = await RequestJudgementCollection.query(
@@ -225,7 +232,15 @@ const elementValidator = new ElementValidator(config);
         let promises = [];
         for (let request of requests) {
             console.log('request.riot: ', request.riot);
-            promises.push(elementValidator.invoke(request.account, request.riot, request._id));
+            let nonce = null;
+            if (_.isEmpty(request.nonce)) {
+                nonce = utils.generateNonce();
+                await RequestJudgementCollection.setEmailVerifiedPendingById(request._id, { nonce: nonce });
+            } else {
+                nonce = request.nonce;
+            }
+            const token = utils.createJwtToken({ nonce: nonce, _id: request._id });
+            promises.push(elementValidator.invoke(request.riot, token));
         }
         if (! _.isEmpty(promises)) {
             await Promise.all(promises);
@@ -237,11 +252,16 @@ const elementValidator = new ElementValidator(config);
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);
-    const account = info.account;
-    const riotAccount = info.riot;
 
-    const dbId = info._id;
-    await elementValidator.invoke(account, riotAccount, dbId);
+    // const account = info.account;
+    // const riotAccount = info.riot;
+
+    // const dbId = info._id;
+    // const nonce = utils.generateNonce();
+    const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
+    // await validator.invoke(info.email, token);
+    await elementValidator.invoke(info.riot, token);
+    // await RequestJudgementCollection.setEmailVerifiedPendingById(info._id, { nonce: nonce });
 });
 
 module.exports = elementValidator;

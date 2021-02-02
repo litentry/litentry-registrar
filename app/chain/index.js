@@ -10,7 +10,7 @@ const { RequestJudgementCollection } = require('app/db');
 const logger = require('app/logger');
 const config = require('app/config');
 const { ValidatorEvent } = require('app/validator/events');
-const { throttle } = require('app/utils');
+const { throttle, generateNonce } = require('app/utils');
 
 const EventEmitter = require('events').EventEmitter;
 const Event = new EventEmitter();
@@ -275,6 +275,8 @@ async function handleRequestJudgement(accountID) {
         } else {
             normalizedInfo.twitter = null;
         }
+
+        normalizedInfo.nonce = generateNonce();
 
         logger.debug(`[Event] normalizedInfo: ${JSON.stringify(normalizedInfo)}`);
         // Store this request into database
