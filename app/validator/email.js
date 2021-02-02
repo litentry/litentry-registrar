@@ -15,7 +15,7 @@ const utils = require('app/utils');
 class EmailValidator extends Validator {
     constructor(config) {
         super(config);
-        const templateString = fs.readFileSync(`${__dirname}/templates/email-new.tpl`, 'utf8');
+        const templateString = fs.readFileSync(`${__dirname}/templates/email.tpl`, 'utf8');
         this.template = _.template(templateString);
     }
 
@@ -38,7 +38,7 @@ class EmailValidator extends Validator {
 const validator = new EmailValidator(config.emailValidator);
 
 (async () => {
-    const interval = 10;
+    const interval = 10000;
 
     setInterval(async () => {
         const requests = await RequestJudgementCollection.query(
@@ -69,10 +69,10 @@ const validator = new EmailValidator(config.emailValidator);
 
 ValidatorEvent.on('handleEmailVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle email verification: ${JSON.stringify(info)}.`);
-    const nonce = utils.generateNonce();
-    const token = utils.createJwtToken({ nonce: nonce, _id: info._id });
+    // const nonce = utils.generateNonce();
+    const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
     await validator.invoke(info.email, token);
-    await RequestJudgementCollection.setEmailVerifiedPendingById(info._id, { nonce: nonce });
+    // await RequestJudgementCollection.setEmailVerifiedPendingById(info._id, { nonce: nonce });
 });
 
 module.exports = validator;

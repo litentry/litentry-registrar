@@ -95,7 +95,7 @@ class ElementValidator extends Validator {
         logger.debug(`Send prompt message to riot user: ${riotAccount}, roomId: ${roomId} at timestamp: ${messageSentTimestamp}`);
         // const token = '';
         const link = `${this.config.callbackEndpoint}?token=${token}`;
-        const msg = `<h4>Verification From Litentry Registrar</h4><a href=\"${link}\">Click me to verify your account</a>`;
+        const msg = `<h4>Verification From Litentry Registrar</h4><a href="${link}">Click me to verify your account</a>`;
         const content = {
             body: 'Verification from litentry-bot',
             formatted_body: msg,
@@ -223,7 +223,7 @@ class ElementValidator extends Validator {
 const elementValidator = new ElementValidator(config);
 
 (async () => {
-    const interval = 10000;
+    const interval = 10;
 
     setInterval(async () => {
         const requests = await RequestJudgementCollection.query(
