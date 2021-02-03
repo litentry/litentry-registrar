@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const sdk = require('matrix-js-sdk');
-// const axios = require('axios');
 const config = require('app/config').elementValidator;
 const logger = require('app/logger');
 const Validator = require('app/validator/base');
@@ -181,87 +180,16 @@ class ElementValidator extends Validator {
             }, self.pollingRoomInterval * 1000);
         });
     }
-    // async pollRoomMessage(room, riotAccount, account, dbId, messageSentTimestamp) {
-    //     /// Sanity check the room value
-    //     if (_.isEmpty(room)) {
-    //         logger.warn(`Room shouldn't be empty. Bug!`);
-    //         return;
-    //     }
-
-    //     let self = this;
-
-    //     return new Promise((resolve) => {
-    //         let retry = 0;
-    //         let handler = setInterval(async () => {
-    //             for (let event of room.timeline) {
-    //                 if (event.getType() === 'm.room.message' &&
-    //                     event.event.sender === riotAccount &&
-    //                     event.event.origin_server_ts >= messageSentTimestamp
-    //                    ) {
-    //                     logger.debug(`Receive input from riot user ${event.event.sender}, input is: ${event.event.content.body}`);
-    //                     if (account === event.event.content.body.trim()) {
-    //                         clearInterval(handler);
-    //                         await RequestJudgementCollection.setRiotVerifiedSuccessById(dbId);
-    //                         await self.sendMessage(room.roomId, 'Verified successfully.');
-    //                         resolve(true);
-    //                     } else {
-    //                         await self.sendMessage(room.roomId, `Your account is mismatched. Please input the right account on ${self.chainName}`);
-    //                     }
-    //                 }
-    //             }
-    //             retry += 1;
-    //             if (retry > self.maxRetries) {
-    //                 clearInterval(handler);
-    //                 await RequestJudgementCollection.setRiotVerifiedFailedById(dbId);
-    //                 resolve(false);
-    //             }
-    //         }, 1000 * self.pollingRoomMessageInterval);
-    //     })
-    // }
 }
 
-const elementValidator = new ElementValidator(config);
-
-(async () => {
-    const interval = 10;
-
-    setInterval(async () => {
-        const requests = await RequestJudgementCollection.query(
-            { $and: [{ riotStatus: { $ne: 'verifiedSuccess' } }, { riot: { $ne: null } }] }
-        );
-        let promises = [];
-        for (let request of requests) {
-            console.log('request.riot: ', request.riot);
-            let nonce = null;
-            if (_.isEmpty(request.nonce)) {
-                nonce = utils.generateNonce();
-                await RequestJudgementCollection.setEmailVerifiedPendingById(request._id, { nonce: nonce });
-            } else {
-                nonce = request.nonce;
-            }
-            const token = utils.createJwtToken({ nonce: nonce, _id: request._id });
-            promises.push(elementValidator.invoke(request.riot, token));
-        }
-        if (! _.isEmpty(promises)) {
-            await Promise.all(promises);
-            promises.length = 0;
-        }
-        logger.debug(`Run verified riot field for ${requests.length} judgement requests.`);
-    }, 1000 * interval);
-})();
+const validator = new ElementValidator(config);
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);
 
-    // const account = info.account;
-    // const riotAccount = info.riot;
-
-    // const dbId = info._id;
-    // const nonce = utils.generateNonce();
     const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
-    // await validator.invoke(info.email, token);
-    await elementValidator.invoke(info.riot, token);
-    // await RequestJudgementCollection.setEmailVerifiedPendingById(info._id, { nonce: nonce });
+    await validator.invoke(info.riot, token);
+    await RequestJudgementCollection.setRiotVerifiedPendingById(info._id);
 });
 
-module.exports = elementValidator;
+module.exports = validator;

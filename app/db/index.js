@@ -159,6 +159,12 @@ class RequestJudgementCollection {
         return await this.db.update(this.collectionName, filter, content);
     }
 
+    async setRiotVerifiedPendingById(id, addition = {}) {
+        const filter = { _id: id };
+        const content = { riotStatus: 'pending', ...addition };
+        return await this.db.update(this.collectionName, filter, content);
+    }
+
     async setRiotVerifiedSuccessById(id) {
         const filter = { _id: id };
         const content = { riotStatus: 'verifiedSuccess' };

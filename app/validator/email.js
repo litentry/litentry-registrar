@@ -37,42 +37,12 @@ class EmailValidator extends Validator {
 
 const validator = new EmailValidator(config.emailValidator);
 
-(async () => {
-    const interval = 10000;
-
-    setInterval(async () => {
-        const requests = await RequestJudgementCollection.query(
-            { $and: [{ emailStatus: { $ne: 'verifiedSuccess' } }, { email: { $ne: null } }] }
-        );
-        let promises = [];
-        for (let request of requests) {
-            console.log('request.email: ', request.email);
-
-            let nonce = null;
-            if (_.isEmpty(request.nonce)) {
-                nonce = utils.generateNonce();
-                await RequestJudgementCollection.setEmailVerifiedPendingById(request._id, { nonce: nonce });
-            } else {
-                nonce = request.nonce;
-            }
-            const token = utils.createJwtToken({ nonce: nonce, _id: request._id });
-            promises.push(validator.invoke(request.email, token));
-        }
-        if (! _.isEmpty(promises)) {
-            await Promise.all(promises);
-            promises.length = 0;
-        }
-        logger.debug(`Run verified email field for ${requests.length} judgement requests.`);
-    }, 1000 * interval);
-})();
-
 
 ValidatorEvent.on('handleEmailVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle email verification: ${JSON.stringify(info)}.`);
-    // const nonce = utils.generateNonce();
     const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
     await validator.invoke(info.email, token);
-    // await RequestJudgementCollection.setEmailVerifiedPendingById(info._id, { nonce: nonce });
+    await RequestJudgementCollection.setEmailVerifiedPendingById(info._id);
 });
 
 module.exports = validator;

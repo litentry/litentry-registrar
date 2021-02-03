@@ -17,6 +17,10 @@ if (cluster.isMaster) {
     logger.debug(chalk.green(`Master process ${process.pid} is running...`));
     // Fork workers
     let provideJudgementWorker = cluster.fork({ type: 'provide_judgement_process' });
+
+    let elementWorker = cluster.fork({ type: 'element_verification_process' });
+    let emailWorker = cluster.fork({ type: 'email_verification_process' });
+
     let webServerWorker = cluster.fork({ type: 'web_server_process' });
 
     cluster.on('exit', (worker, code, signal) => {
@@ -29,18 +33,26 @@ if (cluster.isMaster) {
         if (worker.id === provideJudgementWorker.id) {
             logger.info(chalk.green('Restarting provideJudgement worker...'));
             provideJudgementWorker = cluster.fork({ type: 'provide_judgement_process' });
-        } else if (worker.id == webServerWorker.id) {
+        } else if (worker.id === webServerWorker.id) {
             logger.info(chalk.green('Restarting webServer worker...'));
             webServerWorker = cluster.fork({ type: 'web_server_process' });
+        } else if (worker.id === elementWorker.id) {
+            logger.info(chalk.green('Restarting element worker...'));
+            elementWorker = cluster.fork({ type: 'element_verification_process' });
+        } else if (worker.id === emailWorker.id) {
+            logger.info(chalk.green('Restarting email worker...'));
+            emailWorker = cluster.fork({ type: 'email_verification_process' });
         } else {
             logger.info(chalk.red(`Invalid worker ${worker.id} received`));
         }
     });
-} else if (cluster.worker.process.env.type == 'provide_judgement_process') {
+} else if (cluster.worker.process.env.type === 'provide_judgement_process') {
     const _ = require('lodash');
     // Run `provideJudgement` every `interval`
     const config = require('app/config').litentry;
     const { RequestJudgementCollection } = require('app/db');
+
+    logger.info(chalk.green(`Start provide judgement cron job`));
 
     const interval = config.provideJudgementInterval || 120;
     let promises = [];
@@ -101,7 +113,7 @@ if (cluster.isMaster) {
             promises.length = 0;
         }
     }, interval * 1000);
-} else if (cluster.worker.process.env.type == 'web_server_process') {
+} else if (cluster.worker.process.env.type === 'web_server_process') {
     const config = require('app/config').http;
 
     const express = require('express');
@@ -135,8 +147,23 @@ if (cluster.isMaster) {
     /* Auto Restart chain event listener */
     (async () => {
         await Chain.eventListenerAutoRestart();
-        // await Chain.eventListenerStart();
     })();
+} else if (cluster.worker.process.env.type === 'element_verification_process') {
+    /// start element verification process
+    const { ElementJob } = require('app/jobs');
+    logger.info(chalk.green(`Start Element cron job`));
+    (async () => {
+        await ElementJob();
+    });
+
+} else if (cluster.worker.process.env.type === 'email_verification_process') {
+    /// start email  verification process
+    const { EmailJob } = require('app/jobs');
+    logger.info(chalk.green(`Start Email cron job`));
+    (async () => {
+        await EmailJob();
+    });
+    /// TODO: Add Twitter
 } else {
     logger.error(`Unknown worker type ${cluster.worker.process.env.type}`);
     throw new Error(`Unknown worker type ${cluster.worker.process.env.type}`);

@@ -8,7 +8,7 @@ const Chain = require('app/chain');
 const { createJwtToken, decodeJwtToken, generateNonce } = require('app/utils');
 const { RequestJudgementCollection, RiotCollection } = require('app/db');
 
-const REDIRECT_URL = 'https://www.litentry.com'
+const REDIRECT_URL = 'https://www.litentry.com';
 
 app.get('/', async (req, res) => {
     try {
