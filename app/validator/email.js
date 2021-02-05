@@ -37,7 +37,6 @@ class EmailValidator extends Validator {
 
 const validator = new EmailValidator(config.emailValidator);
 
-
 ValidatorEvent.on('handleEmailVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle email verification: ${JSON.stringify(info)}.`);
     const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });

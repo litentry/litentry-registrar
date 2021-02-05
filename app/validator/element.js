@@ -38,15 +38,15 @@ class ElementValidator extends Validator {
         let client = self.client;
 
         /// If the client is not running, start the client
-        if (! client.clientRunning) {
+        if (!client.clientRunning) {
             /// NOTE: Do nothing, but listening for incoming messages. Do not remove !
             /// Capture user input events
-            client.on("Room.timeline", async function(/* event, room, toStartOfTimeline, removed, data */) {});
+            client.on('Room.timeline', async function (/* event, room, toStartOfTimeline, removed, data */) {});
             await client.startClient();
         }
 
         const results = await RiotCollection.query({ riot: riotAccount });
-        if ((! _.isEmpty(results)) && results[0].roomId) {
+        if (!_.isEmpty(results) && results[0].roomId) {
             roomId = results[0].roomId;
             logger.debug(`Already has room for riot user: ${riotAccount}, room id: ${roomId}`);
         } else {
@@ -78,9 +78,10 @@ class ElementValidator extends Validator {
             /// Case: malicious user join the group and invite another person, then left the group.
             /// In this case, we simply think the invited user is our target riot user.
             /// Don't send invitation again
-            if ((! _.isEmpty(invitedMembers))
-                 // && invitedMembers[0].userId === riotAccount
-               ) {
+            if (
+                !_.isEmpty(invitedMembers)
+                // && invitedMembers[0].userId === riotAccount
+            ) {
                 logger.debug(`Already invited user ${riotAccount}, no need to invite again`);
             } else {
                 logger.debug(`Inviting user ${riotAccount}`);
@@ -91,7 +92,9 @@ class ElementValidator extends Validator {
         }
         /// Send prompt message to riot user
         let messageSentTimestamp = Date.now();
-        logger.debug(`Send prompt message to riot user: ${riotAccount}, roomId: ${roomId} at timestamp: ${messageSentTimestamp}`);
+        logger.debug(
+            `Send prompt message to riot user: ${riotAccount}, roomId: ${roomId} at timestamp: ${messageSentTimestamp}`
+        );
         // const token = '';
         const link = `${this.config.callbackEndpoint}?token=${token}`;
         const msg = `<h4>Verification From Litentry Registrar</h4><a href="${link}">Click me to verify your account</a>`;
@@ -122,7 +125,7 @@ class ElementValidator extends Validator {
     async invite(roomId, riotAccount) {
         let self = this;
         return new Promise((resolve, reject) => {
-            self.client.invite(roomId, riotAccount, function(err, res) {
+            self.client.invite(roomId, riotAccount, function (err, res) {
                 if (err) {
                     reject(err);
                 } else {
@@ -134,7 +137,6 @@ class ElementValidator extends Validator {
     async sendMessage(roomId, content) {
         let self = this;
         return new Promise((resolve, reject) => {
-
             self.client.sendEvent(roomId, 'm.room.message', content, '', (err, res) => {
                 if (err) {
                     reject(err);
@@ -148,7 +150,7 @@ class ElementValidator extends Validator {
         let self = this;
         logger.debug(`Create a new room for riot user: ${riotAccount}`);
         const { room_id } = await self.client.createRoom({
-            preset: "trusted_private_chat",
+            preset: 'trusted_private_chat',
             invite: [riotAccount],
             is_direct: true,
         });
@@ -168,7 +170,7 @@ class ElementValidator extends Validator {
                     logger.debug(`Try to retrive room by ${roomId}`);
                     room = self.client.getRoom(roomId);
                     retry += 1;
-                    if (! _.isEmpty(room) || retry > self.maxRetries) {
+                    if (!_.isEmpty(room) || retry > self.maxRetries) {
                         logger.debug(`Fetched room by ${roomId} with retry count: ${retry}`);
                         clearInterval(handler);
                         resolve(room);

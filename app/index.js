@@ -154,15 +154,14 @@ if (cluster.isMaster) {
     logger.info(chalk.green(`Start Element cron job`));
     (async () => {
         await ElementJob();
-    });
-
+    })();
 } else if (cluster.worker.process.env.type === 'email_verification_process') {
     /// start email  verification process
     const { EmailJob } = require('app/jobs');
     logger.info(chalk.green(`Start Email cron job`));
     (async () => {
         await EmailJob();
-    });
+    })();
     /// TODO: Add Twitter
 } else {
     logger.error(`Unknown worker type ${cluster.worker.process.env.type}`);

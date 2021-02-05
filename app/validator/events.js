@@ -2,7 +2,6 @@
 
 const EventEmitter = require('events').EventEmitter;
 
-
 /**
  * @description {Event} - singleton pattern for events dispatching
  */

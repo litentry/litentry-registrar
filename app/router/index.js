@@ -185,13 +185,11 @@ app.get('/callback/validationElement', async (req, res) => {
         }
         await validator.ElementValidator.sendMessage(roomId, content);
         return res.redirect(REDIRECT_URL);
-
     } catch (error) {
         logger.error(`GET /call/validate-element unexcepected error.`);
         console.trace(error);
         return res.redirect(REDIRECT_URL);
     }
 });
-
 
 module.exports = app;
