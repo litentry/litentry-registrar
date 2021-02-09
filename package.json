@@ -20,8 +20,8 @@
     },
     "homepage": "https://github.com/litentry/litentry-registrar#readme",
     "dependencies": {
-        "@polkadot/api": "^2.5.1",
-        "@polkadot/x-randomvalues": "^5.4.4",
+        "@polkadot/api": "^3.7.3",
+        "@polkadot/util-crypto": "^5.6.2",
         "@sendgrid/mail": "^7.3.0",
         "axios": "^0.21.0",
         "body-parser": "^1.19.0",

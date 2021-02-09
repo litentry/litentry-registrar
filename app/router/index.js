@@ -85,8 +85,7 @@ app.get('/chain/eventListener/status', async (req, res) => {
 app.post('/chain/provideJudgement', async (req, res) => {
     try {
         const { target, judgement } = req.body;
-        const fee = req.body.fee;
-        const block = await Chain.provideJudgement(target, judgement, fee);
+        const block = await Chain.provideJudgement(target, judgement);
 
         return res.json({ status: 'success', msg: block.events, blockHash: block.blockHash });
     } catch (error) {

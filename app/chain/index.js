@@ -16,11 +16,6 @@ const EventEmitter = require('events').EventEmitter;
 const Event = new EventEmitter();
 
 const Judgement = {
-    FeePaid: {
-        // value like: 100 DOT
-        FeePaid: null,
-    },
-
     Unknown: { Unknown: null },
     Reasonable: { Reasonable: null },
     KnownGood: { KnownGood: null },
@@ -57,7 +52,14 @@ class Chain {
      */
     async connect() {
         if (!this.api) {
-            this.api = await ApiPromise.create({ provider: this.wsProvider });
+            this.api = await ApiPromise.create({
+                provider: this.wsProvider,
+                // NOTE: https://polkadot.js.org/docs/api/FAQ/#the-node-returns-a-could-not-convert-error-on-send
+                types: {
+                    Address: "MultiAddress",
+                    LookupSource: "MultiAddress"
+                },
+            });
         } else {
             await this.api.connect();
         }
@@ -86,7 +88,6 @@ class Chain {
             return this.unsubscribeEventListener;
         }
 
-        // logger.debug('[EventListenerStart] Starting event listener...');
         await this.connect();
         logger.debug('[EventListenerStart] Starting event listener...');
         this.unsubscribeEventListener = this.api.query.system.events((events) => {
@@ -174,7 +175,7 @@ class Chain {
      * @param {String} judgement - judgement for a user, should be one of
      *                 ['Unknown', 'FeePaid', 'Reasonable', 'KnownGood', 'OutOfDate', 'LowQuality]
      */
-    async provideJudgement(target, judgement, fee = null) {
+    async provideJudgement(target, judgement) {
         await this.connect();
 
         const regIndex = this.config.litentry.regIndex;
@@ -183,20 +184,12 @@ class Chain {
             throw new Error(`Unknown judgement type: ${judgement}, should be one of [${_.keys(Judgement)}]`);
         }
 
-        let judgement_ = Judgement[judgement];
-
-        if (judgement == 'FeePaid') {
-            if (fee) {
-                judgement_['FeePaid'] = fee;
-            } else {
-                throw new Error(`Judgement.FeePaid must be a valid integer.`);
-            }
-        }
-
-        const transfer = await this.api.tx.identity.provideJudgement(regIndex, target, judgement_);
+        const judgement_ = Judgement[judgement];
+        const transfer = this.api.tx.identity.provideJudgement(regIndex, target, judgement_);
 
         const { nonce } = await this.api.query.system.account(this.myself.publicKey);
         const myself = this.myself;
+        logger.debug(`Get nonce from system account: ${nonce}`);
         /* eslint-disable-next-line */
         return new Promise((resolve, reject) => {
             transfer.signAndSend(myself, { nonce }, ({ events = [], status }) => {
