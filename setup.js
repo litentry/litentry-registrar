@@ -428,6 +428,11 @@ class Chain {
      * @description set up a registrar for an account
      */
     async setupRegistrar(registrarAccount) {
+        // FIXME: Enforce address mapping
+        const account2registrar = {
+            '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY': '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5',
+            '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty': '14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3',
+        };
         console.log(`[setupRegistrar] Try to add registrar: `);
         console.log(registrarAccount.toJson());
         await self.connect();
@@ -440,7 +445,8 @@ class Chain {
             for (let registrar of registrars.toArray()) {
                 console.log(`registrar.value: ${registrar.value.account}`);
                 console.log(`registrarAccount: ${registrarAccount.address}`);
-                if (`${registrar.value.account}` === `${registrarAccount.address}`) {
+                if (`${registrar.value.account}` === `${account2registrar[registrarAccount.address]}`) {
+                    console.log(`registrar already existed, ignore.`);
                     return;
                 }
             }
@@ -490,7 +496,7 @@ class Chain {
                 console.log(`registrar.value: ${registrar.value.account}`);
                 console.log(`registrarAccount: ${registrarAccount.address}`);
 
-                if (`${registrar.value.account}` === `${registrarAccount.address}`) {
+                if (`${registrar.value.account}` === `${account2registrar[registrarAccount.address]}`) {
                     waiting = false;
                     break;
                 }
