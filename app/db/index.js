@@ -30,13 +30,23 @@ class MongodbStorage {
         } else {
             endpoint = `mongodb://${this.config.host}:${this.config.port}`;
         }
-
         this.client = new MongoClient(endpoint);
-        await this.client.connect();
-        this.database = this.client.db(this.config.dbName);
-        logger.info(`[MongodbStorage.connect] connect to mongodb successfully.`);
-    }
 
+        if (! this.client.isConnected()) {
+            await this.client.connect();
+            this.database = this.client.db(this.config.dbName);
+            logger.info(`[MongodbStorage.connect] connect to mongodb successfully.`);
+        }
+    }
+    /**
+     * Disconnect from mongodb
+     */
+    async disconnect() {
+        if (this.client) {
+            await this.client.close();
+            this.client = null;
+        }
+    }
     /**
      * @param {String} collection - the collection to be queried inside mongodb database
      * @param {*} filter - a filter applied to obtain specific rows
@@ -120,10 +130,6 @@ class RequestJudgementCollection {
         return results;
     }
 
-    async queryByAccount(account) {
-        return await this.query(this.collectionName, { account: account });
-    }
-
     async setEmailVerifiedPendingById(id, addition = {}) {
         const filter = { _id: id };
         const content = { emailStatus: 'pending', ...addition };
@@ -153,6 +159,12 @@ class RequestJudgementCollection {
         return await this.db.update(this.collectionName, filter, content);
     }
 
+    async setRiotVerifiedPendingById(id, addition = {}) {
+        const filter = { _id: id };
+        const content = { riotStatus: 'pending', ...addition };
+        return await this.db.update(this.collectionName, filter, content);
+    }
+
     async setRiotVerifiedSuccessById(id) {
         const filter = { _id: id };
         const content = { riotStatus: 'verifiedSuccess' };
@@ -177,6 +189,22 @@ class RequestJudgementCollection {
     }
 }
 
+class RiotCollection {
+    constructor(db) {
+        this.db = db;
+        this.collectionName = 'riot';
+    }
+
+    async upsert(riot, content) {
+        return await this.db.update(this.collectionName, { riot: riot }, content);
+    }
+
+    async query(filter) {
+        const results = await this.db.query(this.collectionName, filter);
+        return results;
+    }
+}
+
 if (!config) {
     throw new Error('Add configuration for mongodb.');
 }
@@ -186,4 +214,5 @@ const storage = new MongodbStorage(config);
 module.exports = {
     Storage: storage,
     RequestJudgementCollection: new RequestJudgementCollection(storage),
+    RiotCollection: new RiotCollection(storage),
 };
