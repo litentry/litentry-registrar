@@ -29,6 +29,7 @@ class TwitterValidator extends Validator {
     async invoke(twitterAccount, token) {
         const link = `${this.config.callbackEndpoint}?token=${token}`;
         try {
+            await this.sendMessage(twitterAccount, "Please click the following link to finish verification:");
             const resp = await this.sendMessage(twitterAccount, link);
             logger.debug(`Send verification message to ${JSON.stringify(resp)} successfully.`);
             return resp;
