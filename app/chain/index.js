@@ -265,6 +265,9 @@ async function handleRequestJudgement(accountID) {
 
         if (info.twitter.Raw && info.twitter.Raw.startsWith('0x')) {
             normalizedInfo.twitter = hexToUtf8(info.twitter.Raw.substring(2));
+            if (normalizedInfo.twitter.startsWith('@')) {
+                normalizedInfo.twitter = normalizedInfo.twitter.substring(1);
+            }
         } else {
             normalizedInfo.twitter = null;
         }
