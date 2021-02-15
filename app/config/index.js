@@ -5,8 +5,8 @@ const logger = require('app/logger');
 
 logger.info(`Loading config for '${process.env.NODE_ENV}' environment`.green);
 
-if (process.env.NODE_ENV === 'dev') {
-    module.exports = require('app/config/dev');
+if (process.env.NODE_ENV === 'development') {
+    module.exports = require('app/config/development');
 } else if (process.env.NODE_ENV === 'staging') {
     module.exports = require('app/config/staging');
 } else if (process.env.NODE_ENV === 'production') {
