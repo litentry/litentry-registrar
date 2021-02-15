@@ -148,13 +148,19 @@ class RequestJudgementCollection {
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async setTwitterVerifiedSuccess(account, twitter) {
-        const filter = { account: account, twitter: twitter, status: { $exists: false } };
+    async setTwitterVerifiedPendingById(id, addition = {}) {
+        const filter = { _id: id };
+        const content = { twitterStatus: 'pending', ...addition };
+        return await this.db.update(this.collectionName, filter, content);
+    }
+
+    async setTwitterVerifiedSuccessById(id) {
+        const filter = { _id: id };
         const content = { twitterStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }
-    async setTwitterVerifiedFailed(account, twitter) {
-        const filter = { account: account, twitter: twitter, status: { $exists: false } };
+    async setTwitterVerifiedFailed(id) {
+        const filter = { _id: id };
         const content = { twitterStatus: 'verifiedFailed' };
         return await this.db.update(this.collectionName, filter, content);
     }

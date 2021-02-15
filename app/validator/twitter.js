@@ -1,91 +1,89 @@
-'use strict';
-
+process.env.NODE_ENV = 'development';
 const _ = require('lodash');
 const logger = require('app/logger');
 const config = require('app/config');
-const TwitterApi = require('twitter');
+const { TwitterClient } = require('twitter-api-client');
+
 const Validator = require('app/validator/base');
 
 const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection } = require('app/db');
 
+const utils = require('app/utils');
+
 class TwitterValidator extends Validator {
     constructor(config) {
         super(config);
         this._is_twitter_verified = undefined;
-    }
-
-    async invoke(userName, walletAddr) {
-        const client = new TwitterApi({
-            consumer_key: this.config.consumerKey,
-            consumer_secret: this.config.consumerSecret,
-            access_token_key: this.config.tokenKey,
-            access_token_secret: this.config.tokenSecret,
+        this.client = new TwitterClient({
+            apiKey: this.config.apiKey,
+            apiSecret: this.config.apiKeySecret,
+            accessToken: this.config.accessToken,
+            accessTokenSecret: this.config.accessTokenSecret,
+            disableCache: true,
+            maxByteSize: 32000000,
+            ttl: 360,
         });
-
-        logger.debug('Twitter verification task starts running ...');
-        // Save context of current function
-        const self = this;
-        const caller = setInterval(async () => {
-            const resp = await self._poll(client, userName, walletAddr);
-            if (resp) {
-                logger.debug(
-                    `Twitter verification for user ${userName}, account ${walletAddr} passed, clear interval...`
-                );
-                // TODO Manipulate database, the following code may result in bugs
-                await RequestJudgementCollection.setTwitterVerifiedSuccess(walletAddr, userName);
-                clearInterval(caller);
-                clearTimeout(timeoutGuard);
-            } else {
-                logger.debug(`Retry polling twitter message for user ${userName}, account ${walletAddr}...`);
-            }
-        }, this.config.pollingInterval);
-
-        const timeoutGuard = setTimeout(async () => {
-            // NOTE: We must clear the interval first, otherwise, may occur bugs accidentally.
-            clearInterval(caller);
-
-            await RequestJudgementCollection.setTwitterVerifiedFailed(walletAddr, userName);
-            logger.debug(
-                `Twitter polling for user ${userName} reached time out, set verification as failed and clear interval...`
-            );
-            // Manipulate database, the following code may result in bugs
-            // await requestJudgementCollection.setTwitterVerificationFailed(walletAddr, userName)
-        }, this.config.maxPollingTime);
     }
 
-    _poll(client, userName, walletAddr) {
-        const params = { screen_name: userName };
-        const limit = 40;
-        return new Promise((resolve, reject) => {
-            client.get('users/lookup.json', params, (error, msgs) => {
-                if (error || _.isEmpty(msgs) || msgs === undefined) {
-                    reject(new Error('Invalid twitter screen name!'));
-                }
-                const userId = msgs[0].id_str;
-                client.get('direct_messages/events/list', { count: limit }, (error, msgs) => {
-                    if (error || _.isEmpty(userId) || msgs === undefined) {
-                        reject(new Error('Cannot find the DM from this user'));
+    async invoke(twitterAccount, token) {
+        const link = `${this.config.callbackEndpoint}?token=${token}`;
+        try {
+            const resp = await this.sendMessage(twitterAccount, link);
+            logger.debug(`Send verification message to ${JSON.stringify(resp)} successfully.`);
+            return resp;
+        } catch (error) {
+            const errorData = JSON.parse(error.data);
+            /* eslint-disable-next-line */
+            if (errorData.hasOwnProperty('errors')) {
+                for (let e of errorData.errors) {
+                    if (e.code === 17) {
+                        /// NOTE You cannot send messages to this user.
+                        logger.warn(`${twitterAccount}: ${e.message}`);
+                    } else if (e.code === 349) {
+                        logger.warn(`${twitterAccount}: ${e.message}`);
+                    } else {
+                        logger.error(`Unexcepted errors occurs for ${twitterAccount}`);
+                        console.trace(error);
                     }
-                    const found = msgs.events.find(
-                        (event) =>
-                            event.message_create.sender_id === userId &&
-                            walletAddr === event.message_create.message_data.text
-                    );
-                    // Return `undefined` or `Object`
-                    resolve(found);
-                });
-            });
-        });
+                }
+            }
+        }
+    }
+
+    async sendMessage(twitterAccount, content) {
+        let resp = null;
+        resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
+        let userId = null;
+        /// NOTE: at most *one* result
+        if (! _.isEmpty(resp)) {
+            userId = resp[0].id;
+        }
+
+        const params = {
+            event: {
+                type: "message_create", message_create: {
+                    target: {
+                        recipient_id: userId
+                    },
+                    message_data: { text: content }
+                }
+            }
+        };
+        resp = await this.client.directMessages.eventsNew(params);
+        return resp;
     }
 }
 
+
 const validator = new TwitterValidator(config.twitterValidator);
+
 
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
-    validator.invoke(info.twitter, info.account);
-    logger.debug('Twitter verification task starts running ...');
+    const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
+    await validator.invoke(info.twitter, token);
+    await RequestJudgementCollection.setTwitterVerifiedPendingById(info._id);
 });
 
-module.exports = TwitterValidator;
+module.exports = validator;

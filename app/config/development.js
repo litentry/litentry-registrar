@@ -7,7 +7,7 @@ module.exports = Object.freeze({
     },
     chain: {
         protocol: 'ws',
-        provider: 'localhost',
+        provider: '18.140.130.138',
         port: 9944,
     },
     litentry: {
@@ -15,8 +15,8 @@ module.exports = Object.freeze({
         privateKey: '',
         defaultAccount: '//Alice',
         regIndex: 0,
-        provideJudgementInterval: 300, // seconds
-        requestJudgementInterval: 300, // seconds
+        provideJudgementInterval: 30, // seconds
+        requestJudgementInterval: 30, // seconds
         defaultJudgement: 'Reasonable',
     },
     mongodb: {
@@ -27,7 +27,7 @@ module.exports = Object.freeze({
         password: '',
     },
     emailValidator: {
-        callbackEndpoint: 'http://ec2-18-140-130-138.ap-southeast-1.compute.amazonaws.com:8080/callback/validationEmail',
+        callbackEndpoint: 'http://localhost:8080/callback/validationEmail',
         /* send grid */
         apiKey: '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',
         username: 'no-reply@litentry.com',
@@ -36,7 +36,7 @@ module.exports = Object.freeze({
     },
 
     elementValidator: {
-        callbackEndpoint: 'http://ec2-18-140-130-138.ap-southeast-1.compute.amazonaws.com:8080/callback/validationElement',
+        callbackEndpoint: 'http://localhost:8080/callback/validationElement',
         roomId: '!fwdbUHBppFPYOJXzNx:matrix.org',
         accessToken: 'MDAxOGxvY2F0aW9uIG1hdHJpeC5vcmcKMDAxM2lkZW50aWZpZXIga2V5CjAwMTBjaWQgZ2VuID0gMQowMDJiY2lkIHVzZXJfaWQgPSBAbGl0ZW50cnktYm90Om1hdHJpeC5vcmcKMDAxNmNpZCB0eXBlID0gYWNjZXNzCjAwMjFjaWQgbm9uY2UgPSA3fmxqWWorOXc1WnBGb0lNCjAwMmZzaWduYXR1cmUg3oXZA9SOsJE2bXUEnelgKxIbFJrqn5kFzv1LHgk3U4UK',
         userId: '@litentry-bot:matrix.org',
@@ -45,12 +45,13 @@ module.exports = Object.freeze({
 
     },
     twitterValidator: {
-        consumerKey: 'wh3mmqzMRCkbCpZ3OLEDMfchG',
-        consumerSecret: 'BgHD74K0jCtzSVa9Gs8jrqmIsvKBcb7FqFTXTSlPdCfAOs1Ys6',
-        tokenKey: '1324028605245083652-lzOEpYdTV8eKaIKXT1BapS417hmf85',
-        tokenSecret: '7RmFBmWpOZejZd7AhPan6MLWGRAWeA38NEgJdLsGqSE8f',
-        pollingInterval: 5000,
-        maxPollingTime: 20000,
+        callbackEndpoint: 'http://localhost:8080/callback/validationTwitter',
+        apiKey: 'A2AbUjYT5gjne2OAOs846nSVO',
+        apiKeySecret: 'gI5ieMJIJ2qAgGcbn24lmYUla9wDpafDYLFkpK22xSwFCwQcdi',
+        bearerToken: 'AAAAAAAAAAAAAAAAAAAAAL3XJQEAAAAAKFKqbRv%2BU4cjnyOOpAzO%2B0yvg0A%3D2Y8wAh6p9LWJ5ZqenwPDRXikQK8BalIqHC2uHC3pS1OxAJ9c85',
+        accessToken: '1324028605245083652-i0SQABpfeQbf5gmkVwvvEqhPMc6zKA',
+        accessTokenSecret: 'rmJSmMSHffb7j0yixbI2AOreFbZ4ABSWMrCJs77PfsabF',
+        jobInterval: 60 * 30,        //  seconds
     },
     jwt: {
         sessionSecret: '@v96a%%3s_5gBBMW',
