@@ -18,12 +18,12 @@ class EmailValidator extends Validator {
     }
 
     async invoke(info) {
+        const toAddr = info.email;
         const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
         const confirmationAddress = `${this.config.callbackEndpoint}?token=${token}`;
         const html = this.template({ confirmationAddress: confirmationAddress });
         sgMail.setApiKey(this.config.apiKey);
 
-        const toAddr = info.email;
         const msg = {
             to: toAddr,
             from: this.config.username, // Use the email address or domain you verified above

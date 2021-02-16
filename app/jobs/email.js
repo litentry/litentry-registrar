@@ -27,11 +27,11 @@ async function job() {
             } else {
                 nonce = request.nonce;
             }
-            const token = utils.createJwtToken({ nonce: nonce, _id: request._id });
+
             /// Sanity checking
             if (_.isEmpty(request.status)) {
                 /// `Status` can only be `null`, `cancelled`, `verifiedSuccess`
-                promises.push(emailValidator.invoke(request.email, token));
+                promises.push(emailValidator.invoke(request));
             }
         }
         if (! _.isEmpty(promises)) {
