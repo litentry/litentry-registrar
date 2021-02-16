@@ -10,6 +10,12 @@ const { RequestJudgementCollection, RiotCollection } = require('app/db');
 
 const REDIRECT_URL = 'https://www.litentry.com';
 
+
+app.get(['/', '/health'], async (req, res) => {
+    res.send();
+});
+
+
 app.post('/chain/provideJudgement', async (req, res) => {
     try {
         const { target, judgement } = req.body;
