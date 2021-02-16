@@ -7,10 +7,10 @@ const { combine, timestamp, printf, colorize } = winston.format;
 
 let logPath = null;
 
-if (process.env.NODE_ENV === 'dev') {
-    logPath = './log/litentry-registrar';
+if (process.env.NODE_ENV === 'development') {
+    logPath = './log/litentry/registrar';
 } else {
-    logPath = '/var/log/litentry';
+    logPath = '/var/log/litentry/registrar';
 }
 
 if (!fs.existsSync(logPath)) {

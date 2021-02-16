@@ -28,7 +28,11 @@ async function job() {
                 nonce = request.nonce;
             }
             const token = utils.createJwtToken({ nonce: nonce, _id: request._id });
-            promises.push(emailValidator.invoke(request.email, token));
+            /// Sanity checking
+            if (_.isEmpty(request.status)) {
+                /// `Status` can only be `null`, `canceled`, `verifiedSuccess`
+                promises.push(emailValidator.invoke(request.email, token));
+            }
         }
         if (! _.isEmpty(promises)) {
             await Promise.all(promises);

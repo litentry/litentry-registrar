@@ -1,4 +1,4 @@
-process.env.NODE_ENV = 'dev';
+process.env.NODE_ENV = 'development';
 /**
  * See @href https://wiki.polkadot.network/docs/en/learn-identity
  */

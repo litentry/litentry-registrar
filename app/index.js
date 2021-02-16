@@ -20,6 +20,7 @@ if (cluster.isMaster) {
 
     let elementWorker = cluster.fork({ type: 'element_verification_process' });
     let emailWorker = cluster.fork({ type: 'email_verification_process' });
+    let twitterWorker = cluster.fork({ type: 'twitter_verification_process' });
 
     let webServerWorker = cluster.fork({ type: 'web_server_process' });
 
@@ -42,13 +43,16 @@ if (cluster.isMaster) {
         } else if (worker.id === emailWorker.id) {
             logger.info(chalk.green('Restarting email worker...'));
             emailWorker = cluster.fork({ type: 'email_verification_process' });
+        } else if (worker.id === twitterWorker.id) {
+            logger.info(chalk.green('Restarting twitter worker...'));
+            twitterWorker = cluster.fork({ type: 'twitter_verification_process' });
         } else {
             logger.info(chalk.red(`Invalid worker ${worker.id} received`));
         }
     });
 } else if (cluster.worker.process.env.type === 'provide_judgement_process') {
     const { ProvideJudgementJob } = require('app/jobs');
-    logger.info(chalk.green(`Start provide judgement cron job`));
+    logger.info(chalk.green(`Start ProvideJudgement cron job`));
     (async () => {
         await ProvideJudgementJob();
     })();
@@ -95,13 +99,18 @@ if (cluster.isMaster) {
         await ElementJob();
     })();
 } else if (cluster.worker.process.env.type === 'email_verification_process') {
-    /// start email  verification process
+    /// start email verification process
     const { EmailJob } = require('app/jobs');
     logger.info(chalk.green(`Start Email cron job`));
     (async () => {
         await EmailJob();
     })();
-    /// TODO: Add Twitter
+} else if (cluster.worker.process.env.type === 'twitter_verification_process') {
+    const { TwitterJob } = require('app/jobs');
+    logger.info(chalk.green(`Start Twitter cron job`));
+    (async () => {
+        await TwitterJob();
+    })();
 } else {
     logger.error(`Unknown worker type ${cluster.worker.process.env.type}`);
     throw new Error(`Unknown worker type ${cluster.worker.process.env.type}`);
