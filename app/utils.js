@@ -26,6 +26,12 @@ function generateNonce(length = 6) {
     return crypto.randomBytes(length).toString('hex');
 }
 
+async function sleep(secs) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, secs*1000);
+    });
+}
+
 const waitingTime = config.litentry.requestJudgementInterval || 60 * 1000; // 60 seconds
 const funcCacheSize = 4096;
 var FunctionCache = new LRU(funcCacheSize);
@@ -65,4 +71,5 @@ module.exports = {
     decodeJwtToken: decodeJwtToken,
     generateNonce: generateNonce,
     throttle: throttle,
+    sleep: sleep,
 };
