@@ -25,12 +25,16 @@ class TwitterValidator extends Validator {
         });
     }
 
-    async invoke(twitterAccount, token) {
+    async invoke(info) {
+        const twitterAccount = info.twitter;
+        const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
+
         const link = `${this.config.callbackEndpoint}?token=${token}`;
         try {
             const resp = await this.sendCtaMessage(twitterAccount, link);
             logger.debug(`Send verification message to ${JSON.stringify(resp)} successfully.`);
-            return resp;
+
+            await RequestJudgementCollection.setTwitterVerifiedPendingById(info._id);
         } catch (error) {
             const errorData = JSON.parse(error.data);
             /* eslint-disable-next-line */
@@ -48,8 +52,8 @@ class TwitterValidator extends Validator {
                 }
             }
         }
-        return null;
     }
+
     async sendCtaMessage(twitterAccount, content) {
         // NOTE:  CTA means call to action
         let resp = null;
@@ -116,9 +120,7 @@ const validator = new TwitterValidator(config.twitterValidator);
 
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
-    const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
-    await validator.invoke(info.twitter, token);
-    await RequestJudgementCollection.setTwitterVerifiedPendingById(info._id);
+    await validator.invoke(info);
 });
 
 module.exports = validator;

@@ -1,5 +1,3 @@
-'use strict';
-
 const _ = require('lodash');
 const sdk = require('matrix-js-sdk');
 const config = require('app/config').elementValidator;
@@ -25,14 +23,8 @@ class ElementValidator extends Validator {
         this.pollingRoomMessageInterval = 3;
         this.pollingRoomInterval = 2;
     }
-    async _invoke(riotAccount, token) {
-        /// Check if this judgement already verified
-        // const found = await RequestJudgementCollection.query({ _id: dbId });
-        // if ((! _.isEmpty(found)) && (found[0].riotStatus === 'verifiedSuccess')) {
-        //     logger.debug(`Already verified riot field successfully.`);
-        //     return;
-        // }
 
+    async _invoke(riotAccount, token) {
         let self = this;
         let roomId = null;
         let client = self.client;
@@ -95,7 +87,7 @@ class ElementValidator extends Validator {
         logger.debug(
             `Send prompt message to riot user: ${riotAccount}, roomId: ${roomId} at timestamp: ${messageSentTimestamp}`
         );
-        // const token = '';
+
         const link = `${this.config.callbackEndpoint}?token=${token}`;
         const msg = `<h4>Verification From Litentry Registrar</h4><a href="${link}">Click me to verify your account</a>`;
         const content = {
@@ -105,16 +97,15 @@ class ElementValidator extends Validator {
             msgtype: 'm.text',
         };
 
-        await self.sendMessage(roomId, content);
-        /// Poll user's input
-        // await self.pollRoomMessage(room, riotAccount, account, dbId, messageSentTimestamp);
-        /// We keep this connection alive. Never close it
-        // await client.stopClient();
+        const resp = await self.sendMessage(roomId, content);
+        return resp;
     }
-    async invoke(riotAccount, token) {
-        let self = this;
+    async invoke(info) {
+        const riotAccount = info.riot;
+        const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
         try {
-            self._invoke(riotAccount, token);
+            await this._invoke(riotAccount, token);
+            await RequestJudgementCollection.setRiotVerifiedPendingById(info._id);
         } catch (error) {
             /// We need a method to detect failure
             logger.error(`Unexpected error occurs`);
@@ -188,10 +179,7 @@ const validator = new ElementValidator(config);
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);
-
-    const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
-    await validator.invoke(info.riot, token);
-    await RequestJudgementCollection.setRiotVerifiedPendingById(info._id);
+    await validator.invoke(info);
 });
 
 module.exports = validator;
