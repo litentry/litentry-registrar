@@ -1,19 +1,17 @@
-'use strict';
-
 const _ = require('lodash');
 
-const ApiPromise = require('@polkadot/api').ApiPromise;
-const WsProvider = require('@polkadot/api').WsProvider;
-const Keyring = require('@polkadot/api').Keyring;
+const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
+const { cryptoWaitReady } = require('@polkadot/util-crypto');
 
 const { RequestJudgementCollection } = require('app/db');
 const logger = require('app/logger');
 const config = require('app/config');
 const { ValidatorEvent } = require('app/validator/events');
-const { throttle, generateNonce } = require('app/utils');
+const { throttle, generateNonce, sleep } = require('app/utils');
 
 const EventEmitter = require('events').EventEmitter;
 const Event = new EventEmitter();
+
 
 const Judgement = {
     Unknown: { Unknown: null },
@@ -39,7 +37,7 @@ class Chain {
      */
     constructor(config) {
         this.config = config;
-        this.wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}:${config.chain.port}`);
+        this.wsProvider = new WsProvider(`${this.config.chain.protocol}://${this.config.chain.provider}:${this.config.chain.port}`);
         this.keyring = new Keyring({ type: 'sr25519' });
         this.myself = null;
 
@@ -51,31 +49,28 @@ class Chain {
      * Connect to a configured block chain, such as polkadot, westend or local chain.
      */
     async connect() {
-        if (!this.api) {
-            this.api = await ApiPromise.create({
-                provider: this.wsProvider,
-                // NOTE: https://polkadot.js.org/docs/api/FAQ/#the-node-returns-a-could-not-convert-error-on-send
-                types: {
-                    Address: "MultiAddress",
-                    LookupSource: "MultiAddress"
-                },
-            });
-        } else {
-            await this.api.connect();
-        }
-
         if (!this.myself) {
-            if (config.litentry.privateKey) {
+            await cryptoWaitReady();
+            if (this.config.litentry.privateKey) {
                 logger.debug('Use private key');
-                this.myself = this.keyring.addFromUri(config.litentry.privateKey);
-            } else if (config.litentry.mnemonic) {
+                this.myself = this.keyring.addFromUri(this.config.litentry.privateKey);
+            } else if (this.config.litentry.mnemonic) {
                 logger.debug('Use mnemonic');
-                this.myself = this.keyring.addFromUri(config.litentry.mnemonic);
+                this.myself = this.keyring.addFromUri(this.config.litentry.mnemonic);
             } else {
-                logger.debug(`Use default accounts: ${config.litentry.defaultAccount}`);
-                this.myself = this.keyring.addFromUri(config.litentry.defaultAccount);
+                logger.debug(`Use default accounts: ${this.config.litentry.defaultAccount}`);
+                this.myself = this.keyring.addFromUri(this.config.litentry.defaultAccount);
             }
         }
+
+        this.api = await ApiPromise.create({
+            provider: this.wsProvider,
+            // NOTE: https://polkadot.js.org/docs/api/FAQ/#the-node-returns-a-could-not-convert-error-on-send
+            types: {
+                Address: "MultiAddress",
+                LookupSource: "MultiAddress"
+            },
+        });
         return this.api;
     }
 
@@ -89,6 +84,7 @@ class Chain {
         }
 
         await this.connect();
+
         logger.debug('[EventListenerStart] Starting event listener...');
         this.unsubscribeEventListener = this.api.query.system.events((events) => {
             // Loop through the Vec<EventRecord>
@@ -161,14 +157,21 @@ class Chain {
      * Auto Restart event listener
      */
     async eventListenerAutoRestart() {
-        if (this.firstConnected) {
-            this.wsProvider.on('disconnected', async () => {
-                await this.eventListenerRestart();
-            });
-        } else {
+        if (! this.firstConnected) {
             await this.eventListenerStart();
             this.firstConnected = true;
         }
+        this.wsProvider.on('disconnected', async () => {
+            logger.warnr(`Disconnected from *${this.config.chain.provider}*, try to remedy automatically`);
+            await this.eventListenerAutoRestart();
+            await sleep(60);
+        });
+
+        this.wsProvider.on('error', async () => {
+            logger.error(`Error occurs in chain *${this.config.chain.provider}*, try to remedy automatically`);
+            await this.eventListenerAutoRestart();
+            await sleep(120);
+        });
     }
 
     /**
