@@ -23,6 +23,14 @@ const myFormat = printf(({ level, message, timestamp }) => {
 
 const transports = [
     new DailyRotateFile({
+        level: 'debug',
+        filename: `${logPath}/debug-%DATE%.log`,
+        datePattern: 'YYYY-MM-DD',
+        zippedArchive: true,
+        maxSize: '2048m',
+        maxFiles: '31d',
+    }),
+    new DailyRotateFile({
         level: 'info',
         filename: `${logPath}/info-%DATE%.log`,
         datePattern: 'YYYY-MM-DD',
