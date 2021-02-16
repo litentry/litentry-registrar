@@ -28,8 +28,7 @@ class TwitterValidator extends Validator {
     async invoke(twitterAccount, token) {
         const link = `${this.config.callbackEndpoint}?token=${token}`;
         try {
-            await this.sendMessage(twitterAccount, "Please click the following link to finish verification:");
-            const resp = await this.sendMessage(twitterAccount, link);
+            const resp = await this.sendCtaMessage(twitterAccount, link);
             logger.debug(`Send verification message to ${JSON.stringify(resp)} successfully.`);
             return resp;
         } catch (error) {
@@ -49,9 +48,10 @@ class TwitterValidator extends Validator {
                 }
             }
         }
+        return null;
     }
-
-    async sendMessage(twitterAccount, content) {
+    async sendCtaMessage(twitterAccount, content) {
+        // NOTE:  CTA means call to action
         let resp = null;
         resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
         let userId = null;
@@ -66,7 +66,42 @@ class TwitterValidator extends Validator {
                     target: {
                         recipient_id: userId
                     },
-                    message_data: { text: content }
+                    message_data: {
+                        text: 'Verification From Litentry Registrar',
+                        ctas: [
+                            {
+                                type: 'web_url',
+                                label: 'Click me to verify your account',
+                                url: content
+                            },
+                        ]
+                    }
+                }
+            }
+        };
+        resp = await this.client.directMessages.eventsNew(params);
+        return resp;
+    }
+
+    async sendMessage(twitterAccount, content) {
+        // NOTE:  CTA means call to action
+        let resp = null;
+        resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
+        let userId = null;
+        /// NOTE: at most *one* result
+        if (! _.isEmpty(resp)) {
+            userId = resp[0].id;
+        }
+
+        const params = {
+            event: {
+                type: "message_create", message_create: {
+                    target: {
+                        recipient_id: userId
+                    },
+                    message_data: {
+                        text: content,
+                    }
                 }
             }
         };
