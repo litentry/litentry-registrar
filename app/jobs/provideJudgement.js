@@ -20,16 +20,16 @@ async function job () {
          * 1. The `riotStatus` is existed and verified successfully.
          * 2. The `emailStatus` is existed and verified successfully.
          * 3. The `twitterStatus` is existed and verified successfully.
-         * 4. The `status` is neither canceled nor verified successfully.
+         * 4. The `status` is neither cancelled nor verified successfully.
          *    `status` is used to indicate the final status of requested judgement,
-         *     can be 'canceled', 'verifiedSuccess' or not existed.
+         *     can be 'cancelled', 'verifiedSuccess' or not existed.
          */
         const requests = await RequestJudgementCollection.query({
             $and: [
                 { $or: [{ riotStatus: { $eq: 'verifiedSuccess' } }, { riot: { $eq: null } }] },
                 { $or: [{ emailStatus: { $eq: 'verifiedSuccess', $exists: true } }, { email: { $eq: null } }] },
                 { $or: [{ twitterStatus: { $eq: 'verifiedSuccess', $exists: true } }, { twitter: { $eq: null } }] },
-                { $and: [{ status: { $ne: 'verifiedSuccess' } }, { status: { $ne: 'canceled' } }] },
+                { $and: [{ status: { $ne: 'verifiedSuccess' } }, { status: { $ne: 'cancelled' } }] },
             ],
         });
         logger.debug(`Run provideJudgement for ${requests.length} judgement requests.`);
@@ -50,7 +50,7 @@ async function job () {
             if (request.riot && request.riotStatus !== 'verifiedSuccess') {
                 continue;
             }
-            if (request.status && request.status !== 'canceled' && request.status !== 'verifiedSuccess') {
+            if (request.status && request.status !== 'cancelled' && request.status !== 'verifiedSuccess') {
                 continue;
             }
             /* eslint-disable-next-line */
