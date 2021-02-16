@@ -29,7 +29,7 @@ async function job() {
             const token = utils.createJwtToken({ nonce: nonce, _id: request._id });
             /// Sanity checking
             if (_.isEmpty(request.status)) {
-                /// `Status` can only be `null`, `canceled`, `verifiedSuccess`
+                /// `Status` can only be `null`, `cancelled`, `verifiedSuccess`
                 promises.push(elementValidator.invoke(request.riot, token));
             }
         }

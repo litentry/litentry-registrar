@@ -110,11 +110,13 @@ class Chain {
                         params[types[index].type] = data.toString();
                     });
                     // We only need to emit `handleRequestJudgement` event on our own registrar.
+                    // NOTE: use `==` instead of `===` in the following code
                     if (params['RegistrarIndex'] == this.config.litentry.regIndex) {
                         Event.emit('handleRequestJudgement', params['AccountId']);
+                    } else {
+                        logger.debug(`Bypass request judgement to registrar #${params['RegistrarIndex']}, we aren't interested in it`);
                     }
                 }
-                // TODO: Should we handle cancelRequestJudgement ?
                 if (event.section === 'identity' && event.method === 'JudgementUnrequested') {
                     logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
                     logger.info(`\t\t${event.meta.documentation.toString()}`);
@@ -311,7 +313,7 @@ async function handleUnRequestJudgement(accountID) {
 
 /**
  * Event handler for cancel a request judgement
- * @param {String} accountID - the accountID to be canceled by our platform
+ * @param {String} accountID - the accountID to be cancelled by our platform
  */
 Event.on('handleUnRequestJudgement', async (accountID) => {
     const func = throttle(`handleUnRequestJudgement:${accountID}`, handleUnRequestJudgement);

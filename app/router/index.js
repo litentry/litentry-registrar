@@ -31,7 +31,7 @@ app.get('/callback/validationEmail', async (req, res) => {
         const data = decodeJwtToken(token);
         // NOTE: We only extract the first row
         // Theoretically, there should be exact one element in queried array if existed.
-        // We filter out the verified email and the request isn't canceled
+        // We filter out the verified email and the request isn't cancelled
         const results = await RequestJudgementCollection.query({
             _id: data._id,
             emailStatus: { $ne: 'verifiedSuccess' },
@@ -59,10 +59,10 @@ app.get('/callback/validationElement', async (req, res) => {
     try {
         const { token } = req.query;
         const data = decodeJwtToken(token);
-        console.log(data);
+
         // NOTE: We only extract the first row
         // Theoretically, there should be exact one element in queried array if existed.
-        // We filter out the verified element and the request isn't canceled
+        // We filter out the verified element and the request isn't cancelled
         const results = await RequestJudgementCollection.query({
             _id: data._id,
             riotStatus: { $ne: 'verifiedSuccess' },
