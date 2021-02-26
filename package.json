@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "test": "./node_modules/.bin/mocha --exit tests/*.inspect.js",
-        "app": "nodemon app/index.js",
+        "app": "nodemon --ignore tests app/index.js",
         "link": "ln -sf ../app node_modules/app",
         "lint": "./node_modules/.bin/eslint --fix app",
         "start": "pm2 start app --restart-delay=2000"

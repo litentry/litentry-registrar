@@ -1,10 +1,8 @@
 /// set env to development
 process.env.NODE_ENV = 'development';
 
-const _ = require('lodash');
 const { RequestJudgementCollection, RiotCollection } = require('app/db');
 const assert = require('chai').assert;
-
 
 
 describe(`RequestJudgement Test`, function() {
