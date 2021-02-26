@@ -3,7 +3,7 @@ require('dotenv').config({ debug: true });
 const assert = require('chai').assert;
 const { RequestJudgementCollection } = require('app/db');
 const { ValidatorEvent } = require('app/validator/events');
-const  utils = require('app/utils');
+const utils = require('app/utils');
 /* eslint-disable-next-line */
 const validator = require('app/validator');
 
@@ -12,10 +12,10 @@ const testRiotAccount = process.env.riot;
 const testTwitterAccount = process.env.twitter;
 
 const TIMEOUT = 3;
-
-describe('Validators', function() {
+describe('Validators', function () {
     this.timeout(20000);
-    beforeEach(async function() {
+
+    beforeEach(async function () {
         await RequestJudgementCollection.db.connect();
 
         try {
@@ -25,11 +25,7 @@ describe('Validators', function() {
         }
     });
 
-    afterEach(async function() {
-    });
-
-
-    it('Email/Twitter/Riot Validator', async function() {
+    it('Email/Twitter/Riot Validator', async function () {
         let normalizedInfo = {
             email: testEmailAccount,
             twitter: testTwitterAccount,
@@ -44,7 +40,7 @@ describe('Validators', function() {
 
         await utils.sleep(TIMEOUT);
 
-        const [ queriedObject ] = await RequestJudgementCollection.query({ _id: insertedId });
+        const [queriedObject] = await RequestJudgementCollection.query({ _id: insertedId });
 
         assert.strictEqual(queriedObject.emailStatus, 'pending');
         assert.strictEqual(queriedObject.twitterStatus, 'pending');
