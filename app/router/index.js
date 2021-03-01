@@ -74,13 +74,11 @@ app.get('/callback/validationElement', async (req, res) => {
             riotStatus: { $ne: 'verifiedSuccess' },
         });
         const { nonce } = results[0];
-
-        const rooms = await RiotCollection.query({ riot: results[0].riot });
-        const roomId = rooms[0].roomId;
         let content = null;
 
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setRiotVerifiedSuccessById(data._id);
+
             content = {
                 body: 'Verification from litentry-bot',
                 formatted_body: 'Verified successfully.',
@@ -96,6 +94,10 @@ app.get('/callback/validationElement', async (req, res) => {
                 msgtype: 'm.text',
             };
         }
+
+        const rooms = await RiotCollection.query({ riot: results[0].riot });
+        const roomId = rooms[0].roomId;
+
         await validator.ElementValidator.sendMessage(roomId, content);
         return res.redirect(REDIRECT_URL);
     } catch (error) {

@@ -159,7 +159,7 @@ class RequestJudgementCollection {
         const content = { twitterStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }
-    async setTwitterVerifiedFailed(id) {
+    async setTwitterVerifiedFailedById(id) {
         const filter = { _id: id };
         const content = { twitterStatus: 'verifiedFailed' };
         return await this.db.update(this.collectionName, filter, content);
