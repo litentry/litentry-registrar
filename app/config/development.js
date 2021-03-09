@@ -9,6 +9,7 @@ module.exports = Object.freeze({
         protocol: 'ws',
         provider: '18.140.130.138',
         port: 9944,
+        name: 'Kusama',
     },
     litentry: {
         mnemonic: '',

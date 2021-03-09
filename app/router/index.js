@@ -45,13 +45,12 @@ app.get('/callback/validationEmail', async (req, res) => {
         const { nonce } = results[0];
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setEmailVerifiedSuccessById(data._id);
-            // return res.json({ status: 'success', msg: '' });
-            return res.redirect(REDIRECT_URL);
+            await validator.EmailValidator.sendConfirmationMessage(results[0].email, 'Verified successfully');
         } else {
             await RequestJudgementCollection.setEmailVerifiedFailedById(data._id);
-            // return res.json({ status: 'fail', msg: '' });
-            return res.redirect(REDIRECT_URL);
+            await validator.EmailValidator.sendConfirmationMessage(results[0].email, 'Verified Failed');
         }
+        return res.redirect(REDIRECT_URL);
     } catch (error) {
         logger.error(`GET /callback/validationEmail unexcepected error ${JSON.stringify(error)}`);
         console.trace(error);
