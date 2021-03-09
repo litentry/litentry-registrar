@@ -1,12 +1,14 @@
 const _ = require('lodash');
 const sdk = require('matrix-js-sdk');
-const config = require('app/config').elementValidator;
+const config = require('app/config');
 const logger = require('app/logger');
 const Validator = require('app/validator/base');
 const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection, RiotCollection } = require('app/db');
 
 const utils = require('app/utils');
+
+const CHAIN_NAME = config.chain.name || '';
 
 class ElementValidator extends Validator {
     constructor(config) {
@@ -24,7 +26,7 @@ class ElementValidator extends Validator {
         this.pollingRoomInterval = 2;
     }
 
-    async _invoke(riotAccount, token) {
+    async _invoke(riotAccount, token, account) {
         let self = this;
         let roomId = null;
         let client = self.client;
@@ -89,9 +91,10 @@ class ElementValidator extends Validator {
         );
 
         const link = `${this.config.callbackEndpoint}?token=${token}`;
-        const msg = `<h4>Verification From Litentry Registrar</h4><a href="${link}">Click me to verify your account</a>`;
+
+        const msg = `<h4>Verification From Litentry Registrar</h4><p>Thank you for using the Registrar service from <strong><em>Litentry</em></strong>. You have submitted an identity verification on <strong><em>${CHAIN_NAME}</em></strong> network. And the account connected to this verification is</p><pre>${account}</pre><p>If you have initiated this verification and are the account owner, please click the following link to finish the process. If not, you can safely ignore this message.</p><a href="${link}">Click me to verify your account</a><p></p><p></p>`;
         const content = {
-            body: 'Verification from litentry-bot',
+            body: 'Verification from Litentry Bot',
             formatted_body: msg,
             format: 'org.matrix.custom.html',
             msgtype: 'm.text',
@@ -104,7 +107,7 @@ class ElementValidator extends Validator {
         const riotAccount = info.riot;
         const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
         try {
-            await this._invoke(riotAccount, token);
+            await this._invoke(riotAccount, token, info.account);
             await RequestJudgementCollection.setRiotVerifiedPendingById(info._id);
         } catch (error) {
             /// We need a method to detect failure
@@ -175,7 +178,7 @@ class ElementValidator extends Validator {
     }
 }
 
-const validator = new ElementValidator(config);
+const validator = new ElementValidator(config.elementValidator);
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);

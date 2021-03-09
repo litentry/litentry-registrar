@@ -7,9 +7,10 @@ const validator = require('app/validator');
 const Chain = require('app/chain');
 const { decodeJwtToken } = require('app/utils');
 const { RequestJudgementCollection, RiotCollection } = require('app/db');
+const config = require('app/config');
 
 const REDIRECT_URL = 'https://www.litentry.com';
-
+const CHAIN_NAME = config.chain.name || '';
 
 app.get(['/', '/health'], async (req, res) => {
     res.send();
@@ -77,18 +78,19 @@ app.get('/callback/validationElement', async (req, res) => {
 
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setRiotVerifiedSuccessById(data._id);
-
+            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${results[0].account}</pre><p>has been verified successfully at ${(new Date()).toISOString()}.</p>`;
             content = {
-                body: 'Verification from litentry-bot',
-                formatted_body: 'Verified successfully.',
+                body: 'Verification from Litentry Bot',
+                formatted_body: msg,
                 format: 'org.matrix.custom.html',
                 msgtype: 'm.text',
             };
         } else {
             await RequestJudgementCollection.setRiotVerifiedFailedById(data._id);
+            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${results[0].account}</pre><p>has been verified failed at ${(new Date()).toISOString()}.</p>`;
             content = {
-                body: 'Verification from litentry-bot',
-                formatted_body: 'Verified failed.',
+                body: 'Verification from Litentry Bot',
+                formatted_body: msg,
                 format: 'org.matrix.custom.html',
                 msgtype: 'm.text',
             };
