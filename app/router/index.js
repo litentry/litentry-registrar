@@ -45,10 +45,10 @@ app.get('/callback/validationEmail', async (req, res) => {
         const { nonce } = results[0];
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setEmailVerifiedSuccessById(data._id);
-            await validator.EmailValidator.sendConfirmationMessage(results[0].email, 'Verified successfully');
+            await validator.EmailValidator.sendConfirmationMessage(results[0].email, results[0].account, 'verified successfully');
         } else {
             await RequestJudgementCollection.setEmailVerifiedFailedById(data._id);
-            await validator.EmailValidator.sendConfirmationMessage(results[0].email, 'Verified Failed');
+            await validator.EmailValidator.sendConfirmationMessage(results[0].email, results[0].account, 'verified failed');
         }
         return res.redirect(REDIRECT_URL);
     } catch (error) {

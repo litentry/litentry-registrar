@@ -26,7 +26,8 @@ class EmailValidator extends Validator {
         const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
         const confirmationAddress = `${this.config.callbackEndpoint}?token=${token}`;
         const html = this.template({ confirmationAddress: confirmationAddress,
-                                     chainName: CHAIN_NAME });
+                                     chainName: CHAIN_NAME,
+                                     account: info.account });
         sgMail.setApiKey(this.config.apiKey);
 
         const msg = {
@@ -45,8 +46,12 @@ class EmailValidator extends Validator {
         }
     }
 
-    async sendConfirmationMessage(email, content) {
-        const html = this.templateEmailResult({ content: content });
+    async sendConfirmationMessage(email, account, content) {
+        let _content = `has been ${content} at ${(new Date()).toISOString()}`;
+        const html = this.templateEmailResult({ content: _content,
+                                                chainName: CHAIN_NAME,
+                                                account: account,
+                                              });
         sgMail.setApiKey(this.config.apiKey);
 
         const msg = {
