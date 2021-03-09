@@ -125,10 +125,10 @@ app.get('/callback/validationTwitter', async (req, res) => {
 
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setTwitterVerifiedSuccessById(data._id);
-            content = 'Verified successfully';
+            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${results[0].account} \n\nhas been verified successfully at ${(new Date()).toISOString()}`;
         } else {
             await RequestJudgementCollection.setTwitterVerifiedFailedById(data._id);
-            content = 'Verified failed';
+            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${results[0].account} \n\nhas been verified failed at ${(new Date()).toISOString()}`;
         }
         await validator.TwitterValidator.sendMessage(twitter, content);
         return res.redirect(REDIRECT_URL);

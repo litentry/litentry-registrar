@@ -9,6 +9,7 @@ const { ValidatorEvent } = require('app/validator/events');
 const { RequestJudgementCollection } = require('app/db');
 
 const utils = require('app/utils');
+const CHAIN_NAME = config.chain.name || '';
 
 class TwitterValidator extends Validator {
     constructor(config) {
@@ -31,7 +32,7 @@ class TwitterValidator extends Validator {
 
         const link = `${this.config.callbackEndpoint}?token=${token}`;
         try {
-            const resp = await this.sendCtaMessage(twitterAccount, link);
+            const resp = await this.sendCtaMessage(twitterAccount, link, info.account);
             logger.debug(`Send verification message to ${JSON.stringify(resp)} successfully.`);
 
             await RequestJudgementCollection.setTwitterVerifiedPendingById(info._id);
@@ -54,7 +55,7 @@ class TwitterValidator extends Validator {
         }
     }
 
-    async sendCtaMessage(twitterAccount, content) {
+    async sendCtaMessage(twitterAccount, content, account) {
         // NOTE:  CTA means call to action
         let resp = null;
         resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
@@ -63,6 +64,7 @@ class TwitterValidator extends Validator {
         if (! _.isEmpty(resp)) {
             userId = resp[0].id;
         }
+        const msg = `Verification From Litentry Registrar\n\nThank you for using the Registrar service from Litentry. You have submitted an identity verification on ${CHAIN_NAME} network. And the account connected to this verification is \n\n${account}\n\nIf you have initiated this verification and are the account owner, please click the following button to finish the process. If not, you can safely ignore this message.`;
 
         const params = {
             event: {
@@ -71,7 +73,7 @@ class TwitterValidator extends Validator {
                         recipient_id: userId
                     },
                     message_data: {
-                        text: 'Verification From Litentry Registrar',
+                        text: msg,
                         ctas: [
                             {
                                 type: 'web_url',
