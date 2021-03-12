@@ -7,9 +7,10 @@ const validator = require('app/validator');
 const Chain = require('app/chain');
 const { decodeJwtToken } = require('app/utils');
 const { RequestJudgementCollection, RiotCollection } = require('app/db');
+const config = require('app/config');
 
 const REDIRECT_URL = 'https://www.litentry.com';
-
+const CHAIN_NAME = config.chain.name || '';
 
 app.get(['/', '/health'], async (req, res) => {
     res.send();
@@ -45,13 +46,12 @@ app.get('/callback/validationEmail', async (req, res) => {
         const { nonce } = results[0];
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setEmailVerifiedSuccessById(data._id);
-            // return res.json({ status: 'success', msg: '' });
-            return res.redirect(REDIRECT_URL);
+            await validator.EmailValidator.sendConfirmationMessage(results[0].email, results[0].account, 'verified successfully');
         } else {
             await RequestJudgementCollection.setEmailVerifiedFailedById(data._id);
-            // return res.json({ status: 'fail', msg: '' });
-            return res.redirect(REDIRECT_URL);
+            await validator.EmailValidator.sendConfirmationMessage(results[0].email, results[0].account, 'verified failed');
         }
+        return res.redirect(REDIRECT_URL);
     } catch (error) {
         logger.error(`GET /callback/validationEmail unexcepected error ${JSON.stringify(error)}`);
         console.trace(error);
@@ -78,18 +78,19 @@ app.get('/callback/validationElement', async (req, res) => {
 
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setRiotVerifiedSuccessById(data._id);
-
+            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${results[0].account}</pre><p>has been verified successfully at ${(new Date()).toISOString()}.</p>`;
             content = {
-                body: 'Verification from litentry-bot',
-                formatted_body: 'Verified successfully.',
+                body: 'Verification from Litentry Bot',
+                formatted_body: msg,
                 format: 'org.matrix.custom.html',
                 msgtype: 'm.text',
             };
         } else {
             await RequestJudgementCollection.setRiotVerifiedFailedById(data._id);
+            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${results[0].account}</pre><p>has been verified failed at ${(new Date()).toISOString()}.</p>`;
             content = {
-                body: 'Verification from litentry-bot',
-                formatted_body: 'Verified failed.',
+                body: 'Verification from Litentry Bot',
+                formatted_body: msg,
                 format: 'org.matrix.custom.html',
                 msgtype: 'm.text',
             };
@@ -124,10 +125,10 @@ app.get('/callback/validationTwitter', async (req, res) => {
 
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setTwitterVerifiedSuccessById(data._id);
-            content = 'Verified successfully';
+            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${results[0].account} \n\nhas been verified successfully at ${(new Date()).toISOString()}`;
         } else {
             await RequestJudgementCollection.setTwitterVerifiedFailedById(data._id);
-            content = 'Verified failed';
+            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${results[0].account} \n\nhas been verified failed at ${(new Date()).toISOString()}`;
         }
         await validator.TwitterValidator.sendMessage(twitter, content);
         return res.redirect(REDIRECT_URL);
