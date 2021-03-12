@@ -27,15 +27,14 @@ async function job () {
         const requests = await RequestJudgementCollection.query({
             $and: [
                 { $or: [{ riotStatus: { $eq: 'verifiedSuccess' } }, { riot: { $eq: null } }] },
-                { $or: [{ emailStatus: { $eq: 'verifiedSuccess', $exists: true } }, { email: { $eq: null } }] },
-                { $or: [{ twitterStatus: { $eq: 'verifiedSuccess', $exists: true } }, { twitter: { $eq: null } }] },
+                { $or: [{ emailStatus: { $eq: 'verifiedSuccess' } }, { email: { $eq: null } }] },
+                { $or: [{ twitterStatus: { $eq: 'verifiedSuccess' } }, { twitter: { $eq: null } }] },
                 { $and: [{ status: { $ne: 'verifiedSuccess' } }, { status: { $ne: 'cancelled' } }] },
             ],
         });
         logger.debug(`Run provideJudgement for ${requests.length} judgement requests.`);
 
         const judgement = config.defaultJudgement || 'Unknown';
-        const fee = null;
 
         for (let request of requests) {
             const target = request.account;
@@ -53,19 +52,12 @@ async function job () {
             if (request.status && request.status !== 'cancelled' && request.status !== 'verifiedSuccess') {
                 continue;
             }
-            /* eslint-disable-next-line */
-            const promise = new Promise(async (resolve, reject) => {
-                const resp = await Chain.provideJudgement(target, judgement, fee);
+            try {
+                const resp = await Chain.provideJudgement(target, judgement);
                 await RequestJudgementCollection.updateById(request._id, { details: resp, status: 'verifiedSuccess' });
-                resolve(true);
-            });
-            promises.push(promise);
-        }
-        /* Run all asynchronous tasks at the same time */
-        if (!_.isEmpty(promises)) {
-            await Promise.all(promises);
-            /* Clear all elements in array */
-            promises.length = 0;
+            } catch (e) {
+                logger.error(`Error occurs during providing judgement: ${new String(e)}`);
+            }
         }
     }, interval * 1000);
 
