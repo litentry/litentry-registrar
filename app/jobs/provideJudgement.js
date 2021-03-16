@@ -30,6 +30,7 @@ async function job () {
                 { $or: [{ emailStatus: { $eq: 'verifiedSuccess' } }, { email: { $eq: null } }] },
                 { $or: [{ twitterStatus: { $eq: 'verifiedSuccess' } }, { twitter: { $eq: null } }] },
                 { $and: [{ status: { $ne: 'verifiedSuccess' } }, { status: { $ne: 'cancelled' } }] },
+                // { updatedAt: { $gte: new Date(new Date() - config.expiredJudgement * 1000) }},
             ],
         });
         logger.debug(`Run provideJudgement for ${requests.length} judgement requests.`);

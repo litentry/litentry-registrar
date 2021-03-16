@@ -19,6 +19,7 @@ module.exports = Object.freeze({
         provideJudgementInterval: 30, // seconds
         requestJudgementInterval: 30, // seconds
         defaultJudgement: 'Reasonable',
+        // expiredJudgement: 60, // seconds
     },
     mongodb: {
         host: 'localhost',
