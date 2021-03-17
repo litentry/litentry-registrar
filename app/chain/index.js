@@ -43,6 +43,11 @@ class Chain {
 
         this.unsubscribeEventListener = null;
         this.firstConnected = false;
+
+        if (this.config.litentry.useProxy && _.isEmpty(this.config.litentry.primaryAccountId)) {
+            throw new Error(`No primary account found in proxy mode.`);
+        }
+
     }
 
     /**
@@ -54,9 +59,6 @@ class Chain {
             if (this.config.litentry.privateKey) {
                 logger.debug('Use private key');
                 this.myself = this.keyring.addFromUri(this.config.litentry.privateKey);
-            } else if (this.config.litentry.mnemonic) {
-                logger.debug('Use mnemonic');
-                this.myself = this.keyring.addFromUri(this.config.litentry.mnemonic);
             } else {
                 logger.debug(`Use default accounts: ${this.config.litentry.defaultAccount}`);
                 this.myself = this.keyring.addFromUri(this.config.litentry.defaultAccount);
@@ -190,7 +192,14 @@ class Chain {
         }
 
         const judgement_ = Judgement[judgement];
-        const transfer = this.api.tx.identity.provideJudgement(regIndex, target, judgement_);
+
+        let transfer = this.api.tx.identity.provideJudgement(regIndex, target, judgement_);
+
+        if (this.config.litentry.useProxy) {
+            transfer = this.api.tx.proxy.proxy(this.config.litentry.primaryAccountId,
+                                               'IdentityJudgement',
+                                               transfer);
+        }
 
         const { nonce } = await this.api.query.system.account(this.myself.publicKey);
         const myself = this.myself;
@@ -202,14 +211,28 @@ class Chain {
                 if (status.isInBlock) {
                     console.log('Included at block hash', status.asInBlock.toHex());
                     console.log('Events:');
-
+                    let error = false;
                     let resp = { blockHash: status.asInBlock.toHex(), events: [] };
 
                     events.forEach(({ event: { data, method, section }, phase }) => {
                         console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
-                        resp['events'].push(`${phase.toString()}: ${section}.${method}, ${data.toString()}`);
+                        resp['events'].push([`${section}.${method}`, data.toString()]);
+
+                        if (data && data.length > 0) {
+                            for (let d of data) {
+                                if (d.asModule) {
+                                    if (d.asModule.error) {
+                                        error = true;
+                                    }
+                                }
+                            }
+                        }
                     });
-                    resolve(resp);
+                    if (error) {
+                        reject(resp);
+                    } else {
+                        resolve(resp);
+                    }
                 }
             });
         });
