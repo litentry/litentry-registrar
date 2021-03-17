@@ -12,14 +12,23 @@ module.exports = Object.freeze({
         name: 'Kusama',
     },
     litentry: {
-        mnemonic: '',
+        useProxy: true,
+        /**
+         * `privateKey` or `defaultAccount` corresponds to proxy account if useProxy is true.
+         * otherwise, it's primary account.
+         */
         privateKey: '',
-        defaultAccount: '//Alice',
+        defaultAccount: '//Eve',
+        /**
+         * primaryAccountId must be set if useProxy is true.
+         * account on kusama/polkadot (publicly)
+         */
+        primaryAccountId: '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5', // Alice
+
         regIndex: 0,
         provideJudgementInterval: 30, // seconds
         requestJudgementInterval: 30, // seconds
         defaultJudgement: 'Reasonable',
-        // expiredJudgement: 60, // seconds
     },
     mongodb: {
         host: 'localhost',
