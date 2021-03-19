@@ -32,7 +32,7 @@ async function sleep(secs) {
     });
 }
 
-const waitingTime = config.litentry.requestJudgementInterval || 60 * 1000; // 60 seconds
+const waitingTime = config.litentry.requestJudgementInterval * 1000 || 60 * 1000; // 60 seconds
 const funcCacheSize = 4096;
 var FunctionCache = new LRU(funcCacheSize);
 

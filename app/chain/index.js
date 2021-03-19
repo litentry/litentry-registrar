@@ -115,6 +115,7 @@ class Chain {
                         logger.debug(`Bypass request judgement to registrar #${params['RegistrarIndex']}, we aren't interested in it`);
                     }
                 }
+                // NOTE: Identity.JugementUnrequested
                 if (event.section === 'identity' && event.method === 'JudgementUnrequested') {
                     logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
                     logger.info(`\t\t${event.meta.documentation.toString()}`);
@@ -128,6 +129,20 @@ class Chain {
                     if (params['RegistrarIndex'] == this.config.litentry.regIndex) {
                         Event.emit('handleUnRequestJudgement', params['AccountId']);
                     }
+                }
+
+                // NOTE: Identity.IdentityCleared
+                if (event.section === 'identity' && event.method === 'IdentityCleared') {
+                    logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+                    logger.info(`\t\t${event.meta.documentation.toString()}`);
+
+                    // Loop through each of the parameters, displaying the type and data
+                    event.data.forEach((data, index) => {
+                        logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
+                        params[types[index].type] = data.toString();
+                    });
+                    // We only need to emit `handleRequestJudgement` event on our own registrar.
+                    Event.emit('handleUnRequestJudgement', params['AccountId']);
                 }
             });
         });
