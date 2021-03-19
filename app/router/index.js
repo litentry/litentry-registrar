@@ -53,7 +53,7 @@ app.get('/callback/validationEmail', async (req, res) => {
         }
         return res.redirect(REDIRECT_URL);
     } catch (error) {
-        logger.error(`GET /callback/validationEmail unexcepected error ${JSON.stringify(error)}`);
+        logger.error(`GET /callback/validationEmail unexcepected error ${new String(error)}`);
         console.trace(error);
         // res.status(400);
         // return res.json({ status: 'fail', msg: new String(error) });
@@ -102,7 +102,7 @@ app.get('/callback/validationElement', async (req, res) => {
         await validator.ElementValidator.sendMessage(roomId, content);
         return res.redirect(REDIRECT_URL);
     } catch (error) {
-        logger.error(`GET /callback/validationElement unexcepected error.`);
+        logger.error(`GET /callback/validationElement unexcepected error ${new String(error)}.`);
         console.trace(error);
         return res.redirect(REDIRECT_URL);
     }
@@ -133,7 +133,7 @@ app.get('/callback/validationTwitter', async (req, res) => {
         await validator.TwitterValidator.sendMessage(twitter, content);
         return res.redirect(REDIRECT_URL);
     } catch (error) {
-        logger.error(`GET /callback/validationTwitter unexcepected error.`);
+        logger.error(`GET /callback/validationTwitter unexcepected error ${new String(error)}.`);
         console.trace(error);
         return res.redirect(REDIRECT_URL);
     }
