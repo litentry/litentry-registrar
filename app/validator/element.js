@@ -92,7 +92,7 @@ class ElementValidator extends Validator {
 
         const link = `${this.config.callbackEndpoint}?token=${token}`;
 
-        const msg = `<h4>Verification From Litentry Registrar</h4><p>Thank you for using the Registrar service from <strong><em>Litentry</em></strong>. You have submitted an identity verification on <strong><em>${CHAIN_NAME}</em></strong> network. And the account connected to this verification is</p><pre>${account}</pre><p>If you have initiated this verification and are the account owner, please click the following link to finish the process. If not, you can safely ignore this message.</p><p>If you have any questions during the verification process, please contact our support at registrar-support@litentry.com or #litentry-registrar-support:matrix.org on Element.</p><a href="${link}">Click me to verify your account</a><p></p><p></p>`;
+        const msg = `<h4>Verification From Litentry Registrar</h4><p>Thank you for using the Registrar service from <strong><em>Litentry</em></strong>. You have submitted an identity verification on <strong><em>${CHAIN_NAME}</em></strong> network. And the account connected to this verification is</p><pre>${account}</pre><p>If you have initiated this verification and are the account owner, please click the following link to finish the process. If not, you can safely ignore this message.</p><p>If you have any questions during the verification process, please contact our support at registrar-support@litentry.com or #litentry-registrar-support:matrix.org on Element.</p><p></p><a href="${link}">Click me to verify your account</a><p></p><p></p>`;
         const content = {
             body: 'Verification from Litentry Bot',
             formatted_body: msg,

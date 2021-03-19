@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const app = require('express').Router();
 
 const logger = require('app/logger');
@@ -63,6 +64,15 @@ app.get('/callback/validationEmail', async (req, res) => {
 
 app.get('/callback/validationElement', async (req, res) => {
     try {
+        // NOTE: we ignore the request invoked by element preview url functionality (synapse)
+        const userAgent = req.headers['user-agent'] || '';
+        logger.info(`UserAgent is: ${userAgent}`);
+
+        if (_.includes(userAgent.toLowerCase(), 'synapse')) {
+            // return res.redirect(REDIRECT_URL);
+            return req.socket.end();
+        }
+
         const { token } = req.query;
         const data = decodeJwtToken(token);
 
