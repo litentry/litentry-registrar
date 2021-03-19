@@ -17,8 +17,7 @@ module.exports = Object.freeze({
          * `privateKey` or `defaultAccount` corresponds to proxy account if useProxy is true.
          * otherwise, it's primary account.
          */
-        privateKey: '',
-        defaultAccount: '//Eve',
+        privateKey: '0x498e0f725d05a51e6529f86fb85d5e59b921cf7c10e140b7d454fd558adcc9f8',
         /**
          * primaryAccountId must be set if useProxy is true.
          * account on kusama/polkadot (publicly)
