@@ -62,7 +62,7 @@ class TwitterValidator extends Validator {
         let userId = null;
         /// NOTE: at most *one* result
         if (! _.isEmpty(resp)) {
-            userId = resp[0].id;
+            userId = resp[0].id_str;
         }
         const msg = `Verification From Litentry Registrar\n\nThank you for using the Registrar service from Litentry. You have submitted an identity verification on ${CHAIN_NAME} network. And the account connected to this verification is \n\n${account}\n\nIf you have initiated this verification and are the account owner, please click the following button to finish the process. If not, you can safely ignore this message.`;
 
@@ -96,7 +96,7 @@ class TwitterValidator extends Validator {
         let userId = null;
         /// NOTE: at most *one* result
         if (! _.isEmpty(resp)) {
-            userId = resp[0].id;
+            userId = resp[0].id_str;
         }
 
         const params = {
