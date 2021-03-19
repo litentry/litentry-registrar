@@ -48,13 +48,11 @@ const transports = [
     }),
 ];
 
-if (process.env.NODE_ENV !== 'production') {
-    transports.push(
-        new winston.transports.Console({
-            level: 'debug',
-        })
-    );
-}
+transports.push(
+    new winston.transports.Console({
+        level: 'debug',
+    })
+);
 
 function getLogger() {
     const logger = winston.createLogger({
