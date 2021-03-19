@@ -348,8 +348,13 @@ Event.on('handleRequestJudgement', async (accountID) => {
 });
 
 async function handleUnRequestJudgement(accountID) {
-    logger.debug(`[Event] HandleUnRequestJudgement: ${accountID}`);
-    return await RequestJudgementCollection.cancel(accountID);
+    try {
+        logger.debug(`[Event] HandleUnRequestJudgement: ${accountID}`);
+        return await RequestJudgementCollection.cancel(accountID);
+    } catch (e) {
+        logger.error(`[Event] HandleUnRequestJudgement: ${accountID}, maybe verified successfully.`);
+        console.trace(e);
+    }
 }
 
 /**
