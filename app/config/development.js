@@ -3,7 +3,7 @@ module.exports = Object.freeze({
         port: 8080,
         address: '0.0.0.0',
         username: 'litentry',
-        password: 'Ux5@Q%9)B">a#yHq',
+        password: 'ncFuL3XsU4yUs358',
     },
     chain: {
         protocol: 'ws',
@@ -46,7 +46,8 @@ module.exports = Object.freeze({
     },
 
     elementValidator: {
-        callbackEndpoint: 'http://localhost:8080/callback/validationElement',
+        // callbackEndpoint: 'http://localhost:8080/callback/validationElement',
+        callbackEndpoint: 'https://605a5219f5ef.ngrok.io/callback/validationElement',
         roomId: '!fwdbUHBppFPYOJXzNx:matrix.org',
         accessToken: 'MDAxOGxvY2F0aW9uIG1hdHJpeC5vcmcKMDAxM2lkZW50aWZpZXIga2V5CjAwMTBjaWQgZ2VuID0gMQowMDJiY2lkIHVzZXJfaWQgPSBAbGl0ZW50cnktYm90Om1hdHJpeC5vcmcKMDAxNmNpZCB0eXBlID0gYWNjZXNzCjAwMjFjaWQgbm9uY2UgPSA3fmxqWWorOXc1WnBGb0lNCjAwMmZzaWduYXR1cmUg3oXZA9SOsJE2bXUEnelgKxIbFJrqn5kFzv1LHgk3U4UK',
         userId: '@litentry-bot:matrix.org',
@@ -54,7 +55,8 @@ module.exports = Object.freeze({
         jobInterval: 30,        //  seconds
     },
     twitterValidator: {
-        callbackEndpoint: 'http://localhost:8080/callback/validationTwitter',
+        // callbackEndpoint: 'http://localhost:8080/callback/validationTwitter',
+        callbackEndpoint: 'https://0cb077d9c3ca.ngrok.io/callback/validationTwitter',
         apiKey: 'A2AbUjYT5gjne2OAOs846nSVO',
         apiKeySecret: 'gI5ieMJIJ2qAgGcbn24lmYUla9wDpafDYLFkpK22xSwFCwQcdi',
         bearerToken: 'AAAAAAAAAAAAAAAAAAAAAL3XJQEAAAAAKFKqbRv%2BU4cjnyOOpAzO%2B0yvg0A%3D2Y8wAh6p9LWJ5ZqenwPDRXikQK8BalIqHC2uHC3pS1OxAJ9c85',
