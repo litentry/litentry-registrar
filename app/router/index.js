@@ -9,14 +9,14 @@ const Chain = require('app/chain');
 const { decodeJwtToken } = require('app/utils');
 const { RequestJudgementCollection, RiotCollection } = require('app/db');
 const config = require('app/config');
+const emailPage = require('app/pages/email');
 
 const REDIRECT_URL = 'https://www.litentry.com';
 const CHAIN_NAME = config.chain.name || '';
 
-app.get(['/', '/health'], async (req, res) => {
+app.get(['/', '/health'], async (_, res) => {
     res.send();
 });
-
 
 app.post('/chain/provideJudgement', async (req, res) => {
     try {
@@ -33,7 +33,21 @@ app.post('/chain/provideJudgement', async (req, res) => {
     }
 });
 
-app.get('/callback/validationEmail', async (req, res) => {
+app.get('/verify-email', async (req, res) => {
+    const { token } = req.query;
+    const confirmationAddress = `${config.baseUrl}/email-verification?token=${token}`;
+    const data = decodeJwtToken(token);
+
+    return res.send(
+        emailPage.renderVerifyEmailPage({
+            account: data.account,
+            chainName: config.chain.name,
+            confirmationAddress,
+        })
+    );
+});
+
+app.get('/email-verification', async (req, res) => {
     try {
         const { token } = req.query;
         const data = decodeJwtToken(token);
@@ -47,18 +61,39 @@ app.get('/callback/validationEmail', async (req, res) => {
         const { nonce } = results[0];
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setEmailVerifiedSuccessById(data._id);
-            await validator.EmailValidator.sendConfirmationMessage(results[0].email, results[0].account, 'verified successfully');
+            await validator.EmailValidator.sendConfirmationMessage(
+                results[0].email,
+                results[0].account,
+                'verified successfully'
+            );
+            return res.send(
+                emailPage.renderVerificationResultPage({
+                    chainName: config.chain.name,
+                    account: results[0].account,
+                    content: `has been verified successfully at ${new Date().toISOString()}`,
+                })
+            );
         } else {
             await RequestJudgementCollection.setEmailVerifiedFailedById(data._id);
-            await validator.EmailValidator.sendConfirmationMessage(results[0].email, results[0].account, 'verified failed');
+            await validator.EmailValidator.sendConfirmationMessage(
+                results[0].email,
+                results[0].account,
+                'verification has failed'
+            );
+            return res.send(
+                emailPage.renderVerificationResultPage({
+                    chainName: config.chain.name,
+                    account: results[0].account,
+                    content: 'verification has failed',
+                })
+            );
         }
-        return res.redirect(REDIRECT_URL);
     } catch (error) {
-        logger.error(`GET /callback/validationEmail unexcepected error ${new String(error)}`);
+        logger.error(`GET /email-verification unexcepected error ${new String(error)}`);
         console.trace(error);
         // res.status(400);
         // return res.json({ status: 'fail', msg: new String(error) });
-        return res.redirect(REDIRECT_URL);
+        return res.redirect(REDIRECT_URL); // TODO: Add error page
     }
 });
 
@@ -88,7 +123,9 @@ app.get('/callback/validationElement', async (req, res) => {
 
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setRiotVerifiedSuccessById(data._id);
-            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${results[0].account}</pre><p>has been verified successfully at ${(new Date()).toISOString()}.</p>`;
+            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${
+                results[0].account
+            }</pre><p>has been verified successfully at ${new Date().toISOString()}.</p>`;
             content = {
                 body: 'Verification from Litentry Bot',
                 formatted_body: msg,
@@ -97,7 +134,9 @@ app.get('/callback/validationElement', async (req, res) => {
             };
         } else {
             await RequestJudgementCollection.setRiotVerifiedFailedById(data._id);
-            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${results[0].account}</pre><p>has been verified failed at ${(new Date()).toISOString()}.</p>`;
+            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${
+                results[0].account
+            }</pre><p>has been verified failed at ${new Date().toISOString()}.</p>`;
             content = {
                 body: 'Verification from Litentry Bot',
                 formatted_body: msg,
@@ -135,10 +174,14 @@ app.get('/callback/validationTwitter', async (req, res) => {
 
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setTwitterVerifiedSuccessById(data._id);
-            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${results[0].account} \n\nhas been verified successfully at ${(new Date()).toISOString()}`;
+            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${
+                results[0].account
+            } \n\nhas been verified successfully at ${new Date().toISOString()}`;
         } else {
             await RequestJudgementCollection.setTwitterVerifiedFailedById(data._id);
-            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${results[0].account} \n\nhas been verified failed at ${(new Date()).toISOString()}`;
+            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${
+                results[0].account
+            } \n\nhas been verified failed at ${new Date().toISOString()}`;
         }
         await validator.TwitterValidator.sendMessage(twitter, content);
         return res.redirect(REDIRECT_URL);
@@ -148,6 +191,5 @@ app.get('/callback/validationTwitter', async (req, res) => {
         return res.redirect(REDIRECT_URL);
     }
 });
-
 
 module.exports = app;
