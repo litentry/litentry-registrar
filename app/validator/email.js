@@ -16,18 +16,28 @@ class EmailValidator extends Validator {
     constructor(config) {
         super(config);
         const templateString = fs.readFileSync(`${__dirname}/templates/email.tpl`, 'utf8');
-        const templateEmailResultString = fs.readFileSync(`${__dirname}/templates/email-verification-result.tpl`, 'utf8');
+        const templateEmailResultString = fs.readFileSync(
+            `${__dirname}/templates/email-verification-result.tpl`,
+            'utf8'
+        );
         this.template = _.template(templateString);
         this.templateEmailResult = _.template(templateEmailResultString);
     }
 
     async invoke(info) {
         const toAddr = info.email;
-        const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
-        const confirmationAddress = `${this.config.callbackEndpoint}?token=${token}`;
-        const html = this.template({ confirmationAddress: confirmationAddress,
-                                     chainName: CHAIN_NAME,
-                                     account: info.account });
+        const token = utils.createJwtToken({
+            nonce: info.nonce,
+            _id: info._id,
+            email: info.email,
+            account: info.account,
+        });
+        const confirmationAddress = `${config.baseUrl}/verify-email?token=${token}`;
+        const html = this.template({
+            confirmationAddress: confirmationAddress,
+            chainName: CHAIN_NAME,
+            account: info.account,
+        });
         sgMail.setApiKey(this.config.apiKey);
 
         const msg = {
@@ -47,11 +57,8 @@ class EmailValidator extends Validator {
     }
 
     async sendConfirmationMessage(email, account, content) {
-        let _content = `has been ${content} at ${(new Date()).toISOString()}`;
-        const html = this.templateEmailResult({ content: _content,
-                                                chainName: CHAIN_NAME,
-                                                account: account,
-                                              });
+        let _content = `has been ${content} at ${new Date().toISOString()}`;
+        const html = this.templateEmailResult({ content: _content, chainName: CHAIN_NAME, account: account });
         sgMail.setApiKey(this.config.apiKey);
 
         const msg = {
