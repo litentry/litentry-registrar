@@ -69,10 +69,9 @@ if (cluster.isMaster) {
 
     app.use('/', (req, res, next) => {
         // TODO: Use json web token
-        if (req.path.startsWith('/chain')) {
+        if (! req.path.startsWith('/callback')) {
             const username = req.query.username || req.body.username;
             const password = req.query.password || req.body.password;
-
             if (config.username !== username || config.password !== password) {
                 return res.json({ status: 'failed', msg: `No rights to access api ${req.path}` });
             }

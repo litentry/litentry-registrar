@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const app = require('express').Router();
+const { TwitterClient } = require('twitter-api-client');
 
 const logger = require('app/logger');
 const validator = require('app/validator');
@@ -17,6 +18,33 @@ app.get(['/', '/health'], async (req, res) => {
     res.send();
 });
 
+app.get('/twitters/:screen_name/status', async (req, res) => {
+    try {
+        const client = new TwitterClient({
+            apiKey: config.twitterValidator.apiKey,
+            apiSecret: config.twitterValidator.apiKeySecret,
+            accessToken: config.twitterValidator.accessToken,
+            accessTokenSecret: config.twitterValidator.accessTokenSecret,
+            disableCache: true,
+            maxByteSize: 32000000,
+            ttl: 360,
+        });
+        let resp = null;
+        [ resp ] = await client.accountsAndUsers.usersLookup({ screen_name: req.params.screen_name });
+        const userId = resp.id;
+
+        const twitterAccount = 'LitentryReg';
+        resp = await client.accountsAndUsers.followersIds({ screen_name: twitterAccount });
+        const followerIds = resp.ids;
+        const followed = _.includes(followerIds, userId) ? true : false;
+        return res.json({ status: 'success', msg: '', followed: followed })
+    } catch (error) {
+        logger.error(`GET /twitters/:screen_name/status unexcepected error:`);
+        console.trace(error);
+        res.status(400);
+        return res.json({ status: 'fail', msg: new String(error) });
+    }
+});
 
 app.post('/chain/provideJudgement', async (req, res) => {
     try {
