@@ -1,14 +1,14 @@
 module.exports = Object.freeze({
     http: {
-        port: 8010,
+        port: 8080,
         address: '0.0.0.0',
         username: 'litentry',
         password: 'Ux5@Q%9)B">a#yHq',
     },
-    baseUrl: 'http//localhost:8010',
+    baseUrl: 'http//localhost:8080',
     chain: {
         protocol: 'ws',
-        provider: '3.0.201.139',
+        provider: '18.140.130.138',
         port: 9944,
         name: 'Kusama',
     },
