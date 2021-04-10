@@ -46,7 +46,6 @@ module.exports = Object.freeze({
     },
 
     elementValidator: {
-        callbackEndpoint: 'http://localhost:8080/callback/validationElement',
         roomId: '!fwdbUHBppFPYOJXzNx:matrix.org',
         accessToken:
             'MDAxOGxvY2F0aW9uIG1hdHJpeC5vcmcKMDAxM2lkZW50aWZpZXIga2V5CjAwMTBjaWQgZ2VuID0gMQowMDJiY2lkIHVzZXJfaWQgPSBAbGl0ZW50cnktYm90Om1hdHJpeC5vcmcKMDAxNmNpZCB0eXBlID0gYWNjZXNzCjAwMjFjaWQgbm9uY2UgPSA3fmxqWWorOXc1WnBGb0lNCjAwMmZzaWduYXR1cmUg3oXZA9SOsJE2bXUEnelgKxIbFJrqn5kFzv1LHgk3U4UK',
@@ -55,7 +54,6 @@ module.exports = Object.freeze({
         jobInterval: 30, //  seconds
     },
     twitterValidator: {
-        callbackEndpoint: 'http://localhost:8080/callback/validationTwitter',
         apiKey: 'A2AbUjYT5gjne2OAOs846nSVO',
         apiKeySecret: 'gI5ieMJIJ2qAgGcbn24lmYUla9wDpafDYLFkpK22xSwFCwQcdi',
         bearerToken:
