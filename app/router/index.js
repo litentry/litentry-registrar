@@ -105,7 +105,7 @@ app.get('/email-verification', async (req, res) => {
     }
 });
 
-app.get('/callback/validationElement', async (req, res) => {
+app.get('/verify-element-account', async (req, res) => {
     try {
         // NOTE: we ignore the request invoked by element preview url functionality (synapse)
         const userAgent = req.headers['user-agent'] || '';
@@ -128,6 +128,8 @@ app.get('/callback/validationElement', async (req, res) => {
         });
         const { nonce } = results[0];
         let content = null;
+        const rooms = await RiotCollection.query({ riot: results[0].riot });
+        const roomId = rooms[0].roomId;
 
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setRiotVerifiedSuccessById(data._id);
@@ -140,6 +142,16 @@ app.get('/callback/validationElement', async (req, res) => {
                 format: 'org.matrix.custom.html',
                 msgtype: 'm.text',
             };
+            validator.ElementValidator.sendMessage(roomId, content);
+
+            return res.send(
+                pages.renderVerificationResultPage({
+                    identityItem: IDENTITY_ITEMS.element,
+                    account: results[0].account,
+                    chainName: CHAIN_NAME,
+                    content: `has been verified successfully at ${new Date().toISOString()}.`,
+                })
+            );
         } else {
             await RequestJudgementCollection.setRiotVerifiedFailedById(data._id);
             const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${
@@ -151,15 +163,19 @@ app.get('/callback/validationElement', async (req, res) => {
                 format: 'org.matrix.custom.html',
                 msgtype: 'm.text',
             };
+            validator.ElementValidator.sendMessage(roomId, content);
+
+            return res.send(
+                pages.renderVerificationResultPage({
+                    identityItem: IDENTITY_ITEMS.element,
+                    chainName: CHAIN_NAME,
+                    account: results[0].account,
+                    content: 'verification has failed',
+                })
+            );
         }
-
-        const rooms = await RiotCollection.query({ riot: results[0].riot });
-        const roomId = rooms[0].roomId;
-
-        await validator.ElementValidator.sendMessage(roomId, content);
-        return res.redirect(REDIRECT_URL);
     } catch (error) {
-        logger.error(`GET /callback/validationElement unexcepected error ${new String(error)}.`);
+        logger.error(`GET /verify-element-account unexcepected error ${new String(error)}.`);
         console.trace(error);
         return res.redirect(REDIRECT_URL);
     }
