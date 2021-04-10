@@ -67,11 +67,12 @@ app.get('/email-verification', async (req, res) => {
         const { nonce } = results[0];
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setEmailVerifiedSuccessById(data._id);
-            await validator.EmailValidator.sendConfirmationMessage(
+            validator.EmailValidator.sendConfirmationMessage(
                 results[0].email,
                 results[0].account,
                 'verified successfully'
             );
+
             return res.send(
                 pages.renderVerificationResultPage({
                     identityItem: IDENTITY_ITEMS.email,
@@ -82,11 +83,12 @@ app.get('/email-verification', async (req, res) => {
             );
         } else {
             await RequestJudgementCollection.setEmailVerifiedFailedById(data._id);
-            await validator.EmailValidator.sendConfirmationMessage(
+            validator.EmailValidator.sendConfirmationMessage(
                 results[0].email,
                 results[0].account,
                 'verification has failed'
             );
+
             return res.send(
                 pages.renderVerificationResultPage({
                     identityItem: IDENTITY_ITEMS.email,
