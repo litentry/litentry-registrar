@@ -106,6 +106,20 @@ app.get('/email-verification', async (req, res) => {
 });
 
 app.get('/verify-element-account', async (req, res) => {
+    const { token } = req.query;
+    const confirmationAddress = `/element-verification?token=${token}`;
+    const data = decodeJwtToken(token);
+
+    return res.send(
+        pages.renderVerifyIdentityItemPage({
+            account: data.account,
+            chainName: CHAIN_NAME,
+            confirmationAddress,
+        })
+    );
+});
+
+app.get('/element-verification', async (req, res) => {
     try {
         // NOTE: we ignore the request invoked by element preview url functionality (synapse)
         const userAgent = req.headers['user-agent'] || '';
@@ -175,7 +189,7 @@ app.get('/verify-element-account', async (req, res) => {
             );
         }
     } catch (error) {
-        logger.error(`GET /verify-element-account unexcepected error ${new String(error)}.`);
+        logger.error(`GET /element-verification unexcepected error ${new String(error)}.`);
         console.trace(error);
         return res.redirect(REDIRECT_URL);
     }
