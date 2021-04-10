@@ -30,7 +30,7 @@ class TwitterValidator extends Validator {
         const twitterAccount = info.twitter;
         const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
 
-        const link = `${this.config.callbackEndpoint}?token=${token}`;
+        const link = `${config.baseUrl}/verify-twitter-account?token=${token}`;
         try {
             const resp = await this.sendCtaMessage(twitterAccount, link, info.account);
             logger.debug(`Send verification message to ${JSON.stringify(resp)} successfully.`);
@@ -61,16 +61,17 @@ class TwitterValidator extends Validator {
         resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
         let userId = null;
         /// NOTE: at most *one* result
-        if (! _.isEmpty(resp)) {
+        if (!_.isEmpty(resp)) {
             userId = resp[0].id_str;
         }
         const msg = `Verification From Litentry Registrar\n\nThank you for using the Registrar service from Litentry. You have submitted an identity verification on ${CHAIN_NAME} network. And the account connected to this verification is \n\n${account}\n\nIf you have initiated this verification and are the account owner, please click the following button to finish the process. If not, you can safely ignore this message.`;
 
         const params = {
             event: {
-                type: "message_create", message_create: {
+                type: 'message_create',
+                message_create: {
                     target: {
-                        recipient_id: userId
+                        recipient_id: userId,
                     },
                     message_data: {
                         text: msg,
@@ -78,12 +79,12 @@ class TwitterValidator extends Validator {
                             {
                                 type: 'web_url',
                                 label: 'Click me to verify your account',
-                                url: content
+                                url: content,
                             },
-                        ]
-                    }
-                }
-            }
+                        ],
+                    },
+                },
+            },
         };
         resp = await this.client.directMessages.eventsNew(params);
         return resp;
@@ -95,30 +96,29 @@ class TwitterValidator extends Validator {
         resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
         let userId = null;
         /// NOTE: at most *one* result
-        if (! _.isEmpty(resp)) {
+        if (!_.isEmpty(resp)) {
             userId = resp[0].id_str;
         }
 
         const params = {
             event: {
-                type: "message_create", message_create: {
+                type: 'message_create',
+                message_create: {
                     target: {
-                        recipient_id: userId
+                        recipient_id: userId,
                     },
                     message_data: {
                         text: content,
-                    }
-                }
-            }
+                    },
+                },
+            },
         };
         resp = await this.client.directMessages.eventsNew(params);
         return resp;
     }
 }
 
-
 const validator = new TwitterValidator(config.twitterValidator);
-
 
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
