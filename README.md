@@ -45,6 +45,11 @@ Litentry Polkadot/Kusama Registrar
     npm start
     ```
 
+- Fix import path's
+  ```
+  npm run link
+  ```
+
 
 ## Staging Server (CI)
 

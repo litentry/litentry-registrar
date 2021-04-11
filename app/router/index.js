@@ -9,14 +9,20 @@ const Chain = require('app/chain');
 const { decodeJwtToken } = require('app/utils');
 const { RequestJudgementCollection, RiotCollection } = require('app/db');
 const config = require('app/config');
+const pages = require('app/pages');
 
 const REDIRECT_URL = 'https://www.litentry.com';
 const CHAIN_NAME = config.chain.name || '';
 
-app.get(['/', '/health'], async (req, res) => {
-    res.send();
+const IDENTITY_ITEMS = Object.freeze({
+    email: 'Email',
+    twitter: 'Twitter',
+    element: 'Element',
 });
 
+app.get(['/', '/health'], async (_, res) => {
+    res.send();
+});
 
 app.post('/chain/provideJudgement', async (req, res) => {
     try {
@@ -33,7 +39,21 @@ app.post('/chain/provideJudgement', async (req, res) => {
     }
 });
 
-app.get('/callback/validationEmail', async (req, res) => {
+app.get('/verify-email', async (req, res) => {
+    const { token } = req.query;
+    const confirmationAddress = `/email-verification?token=${token}`;
+    const data = decodeJwtToken(token);
+
+    return res.send(
+        pages.renderVerifyIdentityItemPage({
+            account: data.account,
+            chainName: CHAIN_NAME,
+            confirmationAddress,
+        })
+    );
+});
+
+app.get('/email-verification', async (req, res) => {
     try {
         const { token } = req.query;
         const data = decodeJwtToken(token);
@@ -47,14 +67,39 @@ app.get('/callback/validationEmail', async (req, res) => {
         const { nonce } = results[0];
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setEmailVerifiedSuccessById(data._id);
-            await validator.EmailValidator.sendConfirmationMessage(results[0].email, results[0].account, 'verified successfully');
+            validator.EmailValidator.sendConfirmationMessage(
+                results[0].email,
+                results[0].account,
+                'verified successfully'
+            );
+
+            return res.send(
+                pages.renderVerificationResultPage({
+                    identityItem: IDENTITY_ITEMS.email,
+                    chainName: CHAIN_NAME,
+                    account: results[0].account,
+                    content: `has been verified successfully at ${new Date().toISOString()}`,
+                })
+            );
         } else {
             await RequestJudgementCollection.setEmailVerifiedFailedById(data._id);
-            await validator.EmailValidator.sendConfirmationMessage(results[0].email, results[0].account, 'verified failed');
+            validator.EmailValidator.sendConfirmationMessage(
+                results[0].email,
+                results[0].account,
+                'verification has failed'
+            );
+
+            return res.send(
+                pages.renderVerificationResultPage({
+                    identityItem: IDENTITY_ITEMS.email,
+                    chainName: CHAIN_NAME,
+                    account: results[0].account,
+                    content: 'verification has failed',
+                })
+            );
         }
-        return res.redirect(REDIRECT_URL);
     } catch (error) {
-        logger.error(`GET /callback/validationEmail unexcepected error ${new String(error)}`);
+        logger.error(`GET /email-verification unexcepected error ${new String(error)}`);
         console.trace(error);
         // res.status(400);
         // return res.json({ status: 'fail', msg: new String(error) });
@@ -62,7 +107,21 @@ app.get('/callback/validationEmail', async (req, res) => {
     }
 });
 
-app.get('/callback/validationElement', async (req, res) => {
+app.get('/verify-element-account', async (req, res) => {
+    const { token } = req.query;
+    const confirmationAddress = `/element-verification?token=${token}`;
+    const data = decodeJwtToken(token);
+
+    return res.send(
+        pages.renderVerifyIdentityItemPage({
+            account: data.account,
+            chainName: CHAIN_NAME,
+            confirmationAddress,
+        })
+    );
+});
+
+app.get('/element-verification', async (req, res) => {
     try {
         // NOTE: we ignore the request invoked by element preview url functionality (synapse)
         const userAgent = req.headers['user-agent'] || '';
@@ -85,40 +144,74 @@ app.get('/callback/validationElement', async (req, res) => {
         });
         const { nonce } = results[0];
         let content = null;
-
-        if (data.nonce == nonce) {
-            await RequestJudgementCollection.setRiotVerifiedSuccessById(data._id);
-            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${results[0].account}</pre><p>has been verified successfully at ${(new Date()).toISOString()}.</p>`;
-            content = {
-                body: 'Verification from Litentry Bot',
-                formatted_body: msg,
-                format: 'org.matrix.custom.html',
-                msgtype: 'm.text',
-            };
-        } else {
-            await RequestJudgementCollection.setRiotVerifiedFailedById(data._id);
-            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${results[0].account}</pre><p>has been verified failed at ${(new Date()).toISOString()}.</p>`;
-            content = {
-                body: 'Verification from Litentry Bot',
-                formatted_body: msg,
-                format: 'org.matrix.custom.html',
-                msgtype: 'm.text',
-            };
-        }
-
         const rooms = await RiotCollection.query({ riot: results[0].riot });
         const roomId = rooms[0].roomId;
 
-        await validator.ElementValidator.sendMessage(roomId, content);
-        return res.redirect(REDIRECT_URL);
+        if (data.nonce == nonce) {
+            await RequestJudgementCollection.setRiotVerifiedSuccessById(data._id);
+            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${
+                results[0].account
+            }</pre><p>has been verified successfully at ${new Date().toISOString()}.</p>`;
+            content = {
+                body: 'Verification from Litentry Bot',
+                formatted_body: msg,
+                format: 'org.matrix.custom.html',
+                msgtype: 'm.text',
+            };
+            validator.ElementValidator.sendMessage(roomId, content);
+
+            return res.send(
+                pages.renderVerificationResultPage({
+                    identityItem: IDENTITY_ITEMS.element,
+                    account: results[0].account,
+                    chainName: CHAIN_NAME,
+                    content: `has been verified successfully at ${new Date().toISOString()}.`,
+                })
+            );
+        } else {
+            await RequestJudgementCollection.setRiotVerifiedFailedById(data._id);
+            const msg = `<p>Your Element ownership of <strong><em>${CHAIN_NAME}</em></strong> account</p><pre>${
+                results[0].account
+            }</pre><p>has been verified failed at ${new Date().toISOString()}.</p>`;
+            content = {
+                body: 'Verification from Litentry Bot',
+                formatted_body: msg,
+                format: 'org.matrix.custom.html',
+                msgtype: 'm.text',
+            };
+            validator.ElementValidator.sendMessage(roomId, content);
+
+            return res.send(
+                pages.renderVerificationResultPage({
+                    identityItem: IDENTITY_ITEMS.element,
+                    chainName: CHAIN_NAME,
+                    account: results[0].account,
+                    content: 'verification has failed',
+                })
+            );
+        }
     } catch (error) {
-        logger.error(`GET /callback/validationElement unexcepected error ${new String(error)}.`);
+        logger.error(`GET /element-verification unexcepected error ${new String(error)}.`);
         console.trace(error);
         return res.redirect(REDIRECT_URL);
     }
 });
 
-app.get('/callback/validationTwitter', async (req, res) => {
+app.get('/verify-twitter-account', async (req, res) => {
+    const { token } = req.query;
+    const confirmationAddress = `/twitter-verification?token=${token}`;
+    const data = decodeJwtToken(token);
+
+    return res.send(
+        pages.renderVerifyIdentityItemPage({
+            account: data.account,
+            chainName: config.chain.name,
+            confirmationAddress,
+        })
+    );
+});
+
+app.get('/twitter-verification', async (req, res) => {
     try {
         const { token } = req.query;
         const data = decodeJwtToken(token);
@@ -135,19 +228,40 @@ app.get('/callback/validationTwitter', async (req, res) => {
 
         if (data.nonce == nonce) {
             await RequestJudgementCollection.setTwitterVerifiedSuccessById(data._id);
-            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${results[0].account} \n\nhas been verified successfully at ${(new Date()).toISOString()}`;
+            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${
+                results[0].account
+            } \n\nhas been verified successfully at ${new Date().toISOString()}`;
+            validator.TwitterValidator.sendMessage(twitter, content);
+
+            return res.send(
+                pages.renderVerificationResultPage({
+                    identityItem: IDENTITY_ITEMS.twitter,
+                    account: results[0].account,
+                    chainName: CHAIN_NAME,
+                    content: `has been verified successfully at ${new Date().toISOString()}`,
+                })
+            );
         } else {
             await RequestJudgementCollection.setTwitterVerifiedFailedById(data._id);
-            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${results[0].account} \n\nhas been verified failed at ${(new Date()).toISOString()}`;
+            content = `Your Twitter ownership of ${CHAIN_NAME} account\n ${
+                results[0].account
+            } \n\nhas been verified failed at ${new Date().toISOString()}`;
+            validator.TwitterValidator.sendMessage(twitter, content);
+
+            return res.send(
+                pages.renderVerificationResultPage({
+                    identityItem: IDENTITY_ITEMS.twitter,
+                    account: results[0].account,
+                    chainName: CHAIN_NAME,
+                    content: 'verification has failed',
+                })
+            );
         }
-        await validator.TwitterValidator.sendMessage(twitter, content);
-        return res.redirect(REDIRECT_URL);
     } catch (error) {
-        logger.error(`GET /callback/validationTwitter unexcepected error ${new String(error)}.`);
+        logger.error(`GET /twitter-verification unexcepected error ${new String(error)}.`);
         console.trace(error);
         return res.redirect(REDIRECT_URL);
     }
 });
-
 
 module.exports = app;
