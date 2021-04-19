@@ -1,4 +1,9 @@
-process.env.NODE_ENV = 'development';
+delete process.env.NODE_ENV;
+const result = require('dotenv').config({ debug: true });
+if (result.error) {
+    throw result.error;
+}
+
 /**
  * See @href https://wiki.polkadot.network/docs/en/learn-identity
  */
@@ -137,7 +142,7 @@ class Chain {
         await self.identitySetIdentity(self.alice, info);
         await sleep(DEFAULT_SLEEP_INTERVAL);
         await self.identityRequestJudgement(self.alice);
-        await sleep(60);
+        await sleep(90);
         [queriedObject] = await RequestJudgementCollection.query(info);
         console.log("queriedObject: ");
         console.log(queriedObject);
