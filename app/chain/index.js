@@ -179,7 +179,7 @@ class Chain {
             this.firstConnected = true;
         }
         this.wsProvider.on('disconnected', async () => {
-            logger.warnr(`Disconnected from *${this.config.chain.provider}*, try to remedy automatically`);
+            logger.warn(`Disconnected from *${this.config.chain.provider}*, try to remedy automatically`);
             await this.eventListenerAutoRestart();
             await sleep(60);
         });

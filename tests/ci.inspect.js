@@ -126,11 +126,11 @@ class Chain {
         // 4. Provide a judgement automatically
 
         try {
-            await self.identityCancel(self.alice);
+            await self.identityCancel(self.bob);
         } catch (e) {
             console.log(e);
         }
-        const info = { display: 'Alice', email: 'no-reply@litentry.com', riot: '@litentry-bot:matrix.org' };
+        const info = { display: 'Bob', email: 'no-reply@litentry.com', riot: '@litentry-bot:matrix.org' };
 
         await RequestJudgementCollection.db.connect();
         await RequestJudgementCollection.db.database.collection('requestJudgement').deleteMany(info);
@@ -139,9 +139,9 @@ class Chain {
         console.log('queriedObject: ');
         console.log(queriedObject);
 
-        await self.identitySetIdentity(self.alice, info);
+        await self.identitySetIdentity(self.bob, info);
         await sleep(DEFAULT_SLEEP_INTERVAL);
-        await self.identityRequestJudgement(self.alice);
+        await self.identityRequestJudgement(self.bob);
         await sleep(90);
         [queriedObject] = await RequestJudgementCollection.query(info);
 
@@ -158,14 +158,14 @@ class Chain {
         await RequestJudgementCollection.setTwitterVerifiedSuccessById(queriedObject._id);
         await sleep(60);
 
-        let _aliceIdentity = await self.api.query.identity.identityOf(self.alice.address);
-        const aliceIdentity = JSON.parse(`${_aliceIdentity}`);
+        let _bobIdentity = await self.api.query.identity.identityOf(self.bob.address);
+        const bobIdentity = JSON.parse(`${_bobIdentity}`);
         const regIndex = 0;
-        console.log(aliceIdentity);
+        console.log(bobIdentity);
         if (
-            aliceIdentity.judgements &&
-            aliceIdentity.judgements[0][0] === regIndex &&
-            _.keys(aliceIdentity.judgements[0][1])[0] === 'Reasonable'
+            bobIdentity.judgements &&
+            bobIdentity.judgements[0][0] === regIndex &&
+            _.keys(bobIdentity.judgements[0][1])[0] === 'Reasonable'
         ) {
             console.log('-------------------- CI Succeeded --------------------');
             process.exit(0);
