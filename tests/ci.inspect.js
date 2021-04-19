@@ -120,7 +120,7 @@ class Chain {
      */
     async ciTest() {
         await this.connect();
-        // 1. Setup bob's identity info
+        // 1. Setup alice's identity info
         // 2. Request a judgement
         // 3. Verify related information, including email, twitter, riot
         // 4. Provide a judgement automatically
@@ -144,8 +144,14 @@ class Chain {
         await self.identityRequestJudgement(self.alice);
         await sleep(90);
         [queriedObject] = await RequestJudgementCollection.query(info);
+
         console.log('queriedObject: ');
         console.log(queriedObject);
+
+        if (_.isEmpty(queriedObject)) {
+            console.log('-------------------- CI Failed --------------------');
+            process.exit(1);
+        }
 
         await RequestJudgementCollection.setEmailVerifiedSuccessById(queriedObject._id);
         await RequestJudgementCollection.setRiotVerifiedSuccessById(queriedObject._id);
