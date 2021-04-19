@@ -36,3 +36,7 @@ jobs:
           npm install
           npm run link
           npm start &> /dev/null
+      - name: ci-test
+        run: |
+          node setup.js
+          node tests/ci.inspect.js
