@@ -21,7 +21,7 @@ const DEFAULT_SLEEP_INTERVAL = 6;
 
 function sleep(seconds) {
     return new Promise((resolve) => {
-        setTimeout(resolve, seconds*1000);
+        setTimeout(resolve, seconds * 1000);
     });
 }
 
@@ -32,7 +32,7 @@ class Chain {
      * @constructor
      */
     constructor(config) {
-        if (! self) {
+        if (!self) {
             self = this;
         } else {
             throw new Error(`Only one chain instance allowed`);
@@ -53,13 +53,14 @@ class Chain {
         const _bob = '//Bob';
         const _charlie = '//Charlie';
         const _dave = '//Dave';
-        if (! self.api) {
-            self.api = await ApiPromise.create({ provider: self.wsProvider,
-                                                 types: {
-                                                     Address: "MultiAddress",
-                                                     LookupSource: "MultiAddress",
-                                                 }
-                                               });
+        if (!self.api) {
+            self.api = await ApiPromise.create({
+                provider: self.wsProvider,
+                types: {
+                    Address: 'MultiAddress',
+                    LookupSource: 'MultiAddress',
+                },
+            });
         }
         if (!self.myself) {
             self.myself = self.keyring.addFromUri(_alice);
@@ -102,7 +103,7 @@ class Chain {
         return [tx, resp];
     }
 
-    async identityCancel(account, regIndex=0) {
+    async identityCancel(account, regIndex = 0) {
         const tx = self.api.tx.identity.cancelRequest(regIndex);
         const resp = await self.signAndSend(tx, account);
         console.log(`[identity.cancelRequest]: ${tx}`);
@@ -113,7 +114,6 @@ class Chain {
         console.log(`Disconnect from chain`);
         await self.api.disconnect();
     }
-
 
     /**
      * CI test
@@ -136,7 +136,7 @@ class Chain {
         await RequestJudgementCollection.db.database.collection('requestJudgement').deleteMany(info);
 
         let [queriedObject] = await RequestJudgementCollection.query(info);
-        console.log("queriedObject: ");
+        console.log('queriedObject: ');
         console.log(queriedObject);
 
         await self.identitySetIdentity(self.alice, info);
@@ -144,7 +144,7 @@ class Chain {
         await self.identityRequestJudgement(self.alice);
         await sleep(90);
         [queriedObject] = await RequestJudgementCollection.query(info);
-        console.log("queriedObject: ");
+        console.log('queriedObject: ');
         console.log(queriedObject);
 
         await RequestJudgementCollection.setEmailVerifiedSuccessById(queriedObject._id);
@@ -156,10 +156,11 @@ class Chain {
         const aliceIdentity = JSON.parse(`${_aliceIdentity}`);
         const regIndex = 0;
         console.log(aliceIdentity);
-        if (aliceIdentity.judgements &&
+        if (
+            aliceIdentity.judgements &&
             aliceIdentity.judgements[0][0] === regIndex &&
             _.keys(aliceIdentity.judgements[0][1])[0] === 'Reasonable'
-           ) {
+        ) {
             console.log('-------------------- CI Succeeded --------------------');
             process.exit(0);
         } else {

@@ -1,4 +1,8 @@
-process.env.NODE_ENV = 'development';
+delete process.env.NODE_ENV;
+const result = require('dotenv').config({ debug: true });
+if (result.error) {
+    throw result.error;
+}
 /**
  * See @href https://wiki.polkadot.network/docs/en/learn-identity
  */
@@ -14,7 +18,7 @@ const DEFAULT_SLEEP_INTERVAL = 6;
 
 function sleep(seconds) {
     return new Promise((resolve) => {
-        setTimeout(resolve, seconds*1000);
+        setTimeout(resolve, seconds * 1000);
     });
 }
 
@@ -25,7 +29,7 @@ class Chain {
      * @constructor
      */
     constructor(config) {
-        if (! self) {
+        if (!self) {
             self = this;
         } else {
             throw new Error(`Only one chain instance allowed`);
@@ -47,16 +51,14 @@ class Chain {
         const _charlie = '//Charlie';
         const _dave = '//Dave';
         const _eve = '//Eve';
-        if (! self.api) {
-            self.api = await ApiPromise.create({ provider: self.wsProvider,
-                                                 types: {
-                                                     Address: "MultiAddress",
-                                                     LookupSource: "MultiAddress",
-                                                     // AccountId: GenericAccountId,
-                                                     // Address: "AccountId",
-                                                     // LookupSource: "AccountId",
-                                                 }
-                                               });
+        if (!self.api) {
+            self.api = await ApiPromise.create({
+                provider: self.wsProvider,
+                types: {
+                    Address: 'MultiAddress',
+                    LookupSource: 'MultiAddress',
+                },
+            });
         }
         if (!self.myself) {
             self.myself = self.keyring.addFromUri(_alice);
@@ -131,7 +133,7 @@ class Chain {
         await self.connect();
         const referendumCount = await self.democracyReferendumCount();
         let referendumInfo = [];
-        for (let i = 0; i < referendumCount; i ++) {
+        for (let i = 0; i < referendumCount; i++) {
             const info = await self.api.query.democracy.referendumInfoOf(i);
             console.log(`[democracy.referendumInfoOf]: ${info}`);
             referendumInfo.push(info);
@@ -175,11 +177,11 @@ class Chain {
                 conviction: 'None',
                 // 0.1 Unit
                 // balance: 1000000000000000
-                balance: balance
-            }
+                balance: balance,
+            },
         };
-        console.log(`vote on referendumInfo: ${referendumInfo[referendumInfo.length-1]}`);
-        const tx = self.api.tx.democracy.vote(referendumInfo.length-1, vote);
+        console.log(`vote on referendumInfo: ${referendumInfo[referendumInfo.length - 1]}`);
+        const tx = self.api.tx.democracy.vote(referendumInfo.length - 1, vote);
         await self.signAndSend(tx, account);
         console.log(`[democracy.vote]: ${tx}`);
         return tx;
@@ -205,7 +207,6 @@ class Chain {
         console.log(`Disconnect from chain`);
         await self.api.disconnect();
     }
-
 
     /**
      * @description set up a registrar for an account
@@ -252,12 +253,12 @@ class Chain {
             referendumInfo = await self.democracyReferendumInfoOf();
         }
         // Extract latest referendum from given array
-        let lastReferendumInfo = referendumInfo[referendumInfo.length-1];
+        let lastReferendumInfo = referendumInfo[referendumInfo.length - 1];
         // Make sure this referendum is `isOngoing` status
-        while (! lastReferendumInfo.value.isOngoing) {
+        while (!lastReferendumInfo.value.isOngoing) {
             await sleep(DEFAULT_SLEEP_INTERVAL);
             referendumInfo = await self.democracyReferendumInfoOf();
-            lastReferendumInfo = referendumInfo[referendumInfo.length-1];
+            lastReferendumInfo = referendumInfo[referendumInfo.length - 1];
         }
         // Now we can safely vote this proposal
         await self.democracyVote(self.alice);
@@ -295,7 +296,6 @@ class Chain {
         await self.identityRegistrars();
         await self.proxyAddProxy(registrarAccount, self.eve);
     }
-
 }
 
 (async () => {
