@@ -36,3 +36,6 @@ jobs:
           npm install
           npm run link
           npm start &> /dev/null
+          sleep 5
+          node setup.js
+          node tests/ci.inspect.js
