@@ -6,21 +6,23 @@ Litentry Polkadot/Kusama Registrar
 
 ## Getting started locally
 
-- Install `git-crypt`. See [git-crypt](https://github.com/AGWA/git-crypt/blob/master/INSTALL.md) for details, Mac users can simply run `brew install git-crypt`.
+-   Install `mongodb-community`, details [here](https://docs.mongodb.com/manual/administration/install-community).
 
-- Set the node env: `echo 'NODE_ENV=develpoment' > ./.env`.
+-   Install `git-crypt`. See [git-crypt](https://github.com/AGWA/git-crypt/blob/master/INSTALL.md) for details, Mac users can simply run `brew install git-crypt`.
 
-- Create the log directory: `mkdir -p ./log/litentry/registrar`.
+-   Set the node env: `echo 'NODE_ENV=develpoment' > ./.env`.
 
-- Install packages: `npm install`.
+-   Create the log directory: `mkdir -p ./log/litentry/registrar`.
 
-- Enable absolute import paths by running `npm link`.
+-   Install packages: `npm install`.
 
-- Before running the app, you need to decrypt the config files. For this you will need the key on your machine, then run: `git-crypt unlock /path/to/key`.
+-   Enable absolute import paths by running `npm link`.
 
-- Add a new registrar account on our development chain: `node setup.js`.
+-   Before running the app, you need to decrypt the config files. For this you will need the key on your machine, then run: `git-crypt unlock /path/to/key`.
 
-- Start the development server: `npm run app`.
+-   Add a new registrar account on our development chain: `node setup.js`.
+
+-   Start the development server: `npm run app`.
 
 ## Set up production environment
 
@@ -28,14 +30,14 @@ Litentry Polkadot/Kusama Registrar
 npm start
 ```
 
-
 Please make sure `pm2` is contronlled by system-level process, like `systemd`.
 
 ## Chain Address
+
 ```
 wss://testnet.litentry.io
 ```
 
-
 ## How to Verify Your Identity
+
 If you meet any problems during identity verification, please follow the instruction given in the link [https://docs.litentry.com/registrar/HowToVerifyYourIdentity.html](https://docs.litentry.com/registrar/HowToVerifyYourIdentity.html)
