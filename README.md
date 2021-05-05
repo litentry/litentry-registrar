@@ -1,48 +1,28 @@
 # litentry-registrar
+
 ![staging](https://github.com/litentry/litentry-registrar/workflows/staging/badge.svg)
 
 Litentry Polkadot/Kusama Registrar
 
-## Set up development environtment
+## Getting started locally
 
-- Install `git-crypt`, useful commands for `git-crypt` (maybe `git crypt` on some different platforms)
+- Install `mongodb-community`, details [here](https://docs.mongodb.com/manual/administration/install-community).
 
-    ```
-    git-crypt lock -k /path/to/key
-    git-crypt unlock /path/to/key
-    git-crypt status
-    ```
+- Install `git-crypt`. See [git-crypt](https://github.com/AGWA/git-crypt/blob/master/INSTALL.md) for details, Mac users can simply run `brew install git-crypt`.
 
-    See [git-crypt](https://github.com/AGWA/git-crypt) for details
-- Add a new registrar account on our development chain
+- Set the node env: `echo 'NODE_ENV=develpoment' > ./.env`.
 
-   ```
-   node setup.js
-   ```
+- Create the log directory: `mkdir -p ./log/litentry/registrar`.
 
-- Install node packages dependencies
+- Install packages: `npm install`.
 
-    ```
-    npm install
-    ```
+- Enable absolute import paths by running `npm link`.
 
-- Setup the development environment
+- Before running the app, you need to decrypt the config files. For this you will need the key on your machine, then run: `git-crypt unlock /path/to/key`.
 
-    ```
-    echo 'NODE_ENV=dev' > ./.env
-    mkdir -p ./log/litentry-registrar
-    ```
+- Add a new registrar account on our development chain: `node setup.js`.
 
-- Start the development server
-
-    ```
-    npm run app
-    ```
-
-- Fix import path's
-  ```
-  npm run link
-  ```
+- Start the development server: `npm run app`.
 
 ## Set up production environment
 

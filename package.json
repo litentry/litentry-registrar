@@ -10,6 +10,10 @@
         "lint": "./node_modules/.bin/eslint --fix app",
         "start": "pm2 start app --restart-delay=2000"
     },
+    "engines": {
+        "node": ">=14.15.0",
+        "npm": ">=7.11.2"
+    },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/litentry/litentry-registrar.git"
