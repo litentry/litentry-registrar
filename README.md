@@ -14,15 +14,15 @@ Litentry Polkadot/Kusama Registrar
 
 - Create the log directory: `mkdir -p ./log/litentry/registrar`.
 
-- Install packages: `npm install`.
+- Install packages: `yarn`.
 
-- Enable absolute import paths by running `npm link`.
+- Enable absolute import paths by running `yarn run link`.
 
 - Before running the app, you need to decrypt the config files. For this you will need the key on your machine, then run: `git-crypt unlock /path/to/key`.
 
-- Add a new registrar account on our development chain: `node setup.js`.
+- Add a new registrar account on our development chain: `yarn run setup`.
 
-- Start the development server: `npm run app`.
+- Start the development server: `yarn run app`.
 
 ## Set up production environment
 
