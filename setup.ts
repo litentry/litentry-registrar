@@ -32,9 +32,6 @@ function sleep(seconds: number): Promise<void> {
     });
 }
 
-// TODO_CHECK I don't think we need this to enforce a singleton as the code using it only attempts to create it once
-// let self = undefined;
-
 class Chain {
     private readonly config: Config;
 
@@ -51,25 +48,14 @@ class Chain {
     dave: KeyringPair;
     eve: KeyringPair;
 
-    // TODO_CHECK is this being used?
-    private readonly unsubscribeEventListener: null;
-
     /**
      * A wrapped APIs for block chain
      * @constructor
      */
     constructor(config: Config) {
-        // if (!self) {
-        //     self = this;
-        // } else {
-        //     throw new Error(`Only one chain instance allowed`);
-        // }
-
         this.config = config;
         this.wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}:${config.chain.port}`);
         this.keyring = new Keyring({ type: 'sr25519' });
-
-        this.unsubscribeEventListener = null;
     }
 
     async connect() {
@@ -363,7 +349,6 @@ class Chain {
         await this.identitySetFee(registrarAccount, regIndex, fee);
         await sleep(DEFAULT_SLEEP_INTERVAL);
         await this.identityRegistrars();
-        await this.proxyAddProxy(registrarAccount, this.eve.address);
     }
 }
 
