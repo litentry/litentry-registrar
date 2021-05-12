@@ -33,8 +33,6 @@ function sleep(seconds: number): Promise<void> {
 }
 
 class Chain {
-    private readonly config: Config;
-
     private readonly wsProvider: WsProvider;
 
     private readonly keyring: Keyring;
@@ -53,7 +51,6 @@ class Chain {
      * @constructor
      */
     constructor(config: Config) {
-        this.config = config;
         this.wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}:${config.chain.port}`);
         this.keyring = new Keyring({ type: 'sr25519' });
     }
