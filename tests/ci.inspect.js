@@ -17,7 +17,7 @@ const { RequestJudgementCollection } = require('../app/db');
 
 // DEFUALT FEE is 1 Unit
 const DEFAULT_REGISTRAR_FEE = 1000000000000;
-const DEFAULT_SLEEP_INTERVAL = 6;
+// const DEFAULT_SLEEP_INTERVAL = 6;
 
 function sleep(seconds) {
     return new Promise((resolve) => {
