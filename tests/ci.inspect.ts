@@ -1,48 +1,56 @@
 delete process.env.NODE_ENV;
-const result = require('dotenv').config({ debug: true });
+
+import dotenv from 'dotenv';
+
+const result = dotenv.config({ debug: true });
+
 if (result.error) {
     throw result.error;
 }
 
+import _ from 'lodash';
+import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
+import { AddressOrPair, ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
+import { KeyringPair } from '@polkadot/keyring/types';
+import config from '../app/config';
+import Config from '../types/config';
+import { RequestJudgementCollection } from '../app/db';
+
 /**
  * See @href https://wiki.polkadot.network/docs/en/learn-identity
  */
-const _ = require('lodash');
-
-const ApiPromise = require('@polkadot/api').ApiPromise;
-const WsProvider = require('@polkadot/api').WsProvider;
-const Keyring = require('@polkadot/api').Keyring;
-const config = require('../app/config');
-const { RequestJudgementCollection } = require('../app/db');
 
 // DEFUALT FEE is 1 Unit
 const DEFAULT_REGISTRAR_FEE = 1000000000000;
 const DEFAULT_SLEEP_INTERVAL = 6;
 
-function sleep(seconds) {
+function sleep(seconds: number) {
     return new Promise((resolve) => {
         setTimeout(resolve, seconds * 1000);
     });
 }
 
-var self = undefined;
 class Chain {
+    private readonly wsProvider: WsProvider;
+
+    private readonly keyring: Keyring;
+
+    private api: ApiPromise;
+
+    private myself: KeyringPair;
+    alice: KeyringPair;
+    bob: KeyringPair;
+    charlie: KeyringPair;
+    dave: KeyringPair;
+    eve: KeyringPair;
+
     /**
      * A wrapped APIs for block chain
      * @constructor
      */
-    constructor(config) {
-        if (!self) {
-            self = this;
-        } else {
-            throw new Error(`Only one chain instance allowed`);
-        }
-
-        self.config = config;
-        self.wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}:${config.chain.port}`);
-        self.keyring = new Keyring({ type: 'sr25519' });
-
-        self.unsubscribeEventListener = null;
+    constructor(config: Config) {
+        this.wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}:${config.chain.port}`);
+        this.keyring = new Keyring({ type: 'sr25519' });
     }
 
     /**
@@ -53,25 +61,29 @@ class Chain {
         const _bob = '//Bob';
         const _charlie = '//Charlie';
         const _dave = '//Dave';
-        if (!self.api) {
-            self.api = await ApiPromise.create({
-                provider: self.wsProvider,
+
+        if (!this.api) {
+            this.api = await ApiPromise.create({
+                provider: this.wsProvider,
                 types: {
                     Address: 'MultiAddress',
                     LookupSource: 'MultiAddress',
                 },
             });
         }
-        if (!self.myself) {
-            self.myself = self.keyring.addFromUri(_alice);
-            self.alice = self.keyring.addFromUri(_alice);
-            self.bob = self.keyring.addFromUri(_bob);
-            self.charlie = self.keyring.addFromUri(_charlie);
-            self.dave = self.keyring.addFromUri(_dave);
+
+        if (!this.myself) {
+            this.myself = this.keyring.addFromUri(_alice);
+            this.alice = this.keyring.addFromUri(_alice);
+            this.bob = this.keyring.addFromUri(_bob);
+            this.charlie = this.keyring.addFromUri(_charlie);
+            this.dave = this.keyring.addFromUri(_dave);
         }
-        return self.api;
+
+        return this.api;
     }
-    async signAndSend(tx, account) {
+
+    async signAndSend(tx: SubmittableExtrinsic<ApiTypes>, account: AddressOrPair) {
         try {
             const block = await tx.signAndSend(account);
             return block;
@@ -79,40 +91,39 @@ class Chain {
             console.log(`Error occurs:`);
             console.trace(error);
         }
+
         return null;
     }
     /**
      * identity
      */
-    async identitySetIdentity(account, info) {
-        await self.connect();
-        info = _.mapValues(info, function (elem) {
-            return { Raw: elem };
-        });
-        const tx = self.api.tx.identity.setIdentity(info);
-        await self.signAndSend(tx, account);
+    async identitySetIdentity(account: AddressOrPair, info: { display: string; email: string; riot: string }) {
+        await this.connect();
+        const tx = this.api.tx.identity.setIdentity(_.mapValues(info, (elem) => ({ Raw: elem })));
+        await this.signAndSend(tx, account);
         console.log(`[identity.setIdentity]: ${tx}`);
         return tx;
     }
 
-    async identityRequestJudgement(account, regIndex = 0, fee = DEFAULT_REGISTRAR_FEE) {
-        const tx = self.api.tx.identity.requestJudgement(regIndex, fee);
-        const resp = await self.signAndSend(tx, account);
+    async identityRequestJudgement(account: AddressOrPair, regIndex = 0, fee = DEFAULT_REGISTRAR_FEE) {
+        const tx = this.api.tx.identity.requestJudgement(regIndex, fee);
+        const resp = await this.signAndSend(tx, account);
         console.log(`[identity.RequestJudgement]: ${tx}`);
         console.log(`[identity.RequestJudgement]: ${resp}`);
         return [tx, resp];
     }
 
-    async identityCancel(account, regIndex = 0) {
-        const tx = self.api.tx.identity.cancelRequest(regIndex);
-        const resp = await self.signAndSend(tx, account);
+    async identityCancel(account: AddressOrPair, regIndex = 0) {
+        const tx = this.api.tx.identity.cancelRequest(regIndex);
+        const resp = await this.signAndSend(tx, account);
         console.log(`[identity.cancelRequest]: ${tx}`);
         console.log(`[identity.cancelRequest] resp: ${resp}`);
         return [tx, resp];
     }
+
     async disconnect() {
         console.log(`Disconnect from chain`);
-        await self.api.disconnect();
+        await this.api.disconnect();
     }
 
     /**
@@ -126,7 +137,7 @@ class Chain {
         // 4. Provide a judgement automatically
 
         try {
-            await self.identityCancel(self.bob);
+            await this.identityCancel(this.bob);
         } catch (e) {
             console.log(e);
         }
@@ -139,9 +150,9 @@ class Chain {
         console.log('queriedObject: ');
         console.log(queriedObject);
 
-        await self.identitySetIdentity(self.bob, info);
+        await this.identitySetIdentity(this.bob, info);
         await sleep(DEFAULT_SLEEP_INTERVAL);
-        await self.identityRequestJudgement(self.bob);
+        await this.identityRequestJudgement(this.bob);
         await sleep(90);
         [queriedObject] = await RequestJudgementCollection.query(info);
 
@@ -158,7 +169,7 @@ class Chain {
         await RequestJudgementCollection.setTwitterVerifiedSuccessById(queriedObject._id);
         await sleep(60);
 
-        let _bobIdentity = await self.api.query.identity.identityOf(self.bob.address);
+        let _bobIdentity = await this.api.query.identity.identityOf(this.bob.address);
         const bobIdentity = JSON.parse(`${_bobIdentity}`);
         const regIndex = 0;
         console.log(bobIdentity);
