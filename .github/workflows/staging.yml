@@ -33,9 +33,9 @@ jobs:
         run: |
           $GIT_CRYPT_CMD unlock $GIT_CRYPT_KEY
           echo NODE_ENV=$NODE_ENV > $TARGET_DIR/.env
-          npm install
-          npm run link
-          npm start &> /dev/null
+          yarn
+          yarn run link
+          yarn start &> /dev/null
           sleep 5
-          node setup.js
-          node tests/ci.inspect.js
+          yarn run setup
+          yarn test
