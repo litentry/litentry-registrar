@@ -140,9 +140,9 @@ class Chain {
         console.log(queriedObject);
 
         await self.identitySetIdentity(self.bob, info);
-        await sleep(DEFAULT_SLEEP_INTERVAL);
+        await sleep(100);
         await self.identityRequestJudgement(self.bob);
-        await sleep(90);
+        await sleep(100);
         [queriedObject] = await RequestJudgementCollection.query(info);
 
         console.log('queriedObject: ');
