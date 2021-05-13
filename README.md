@@ -24,6 +24,8 @@ Litentry Polkadot/Kusama Registrar
 
 - Start the development server: `yarn run app`.
 
+- Run tests: `yarn run test`.
+
 ## Set up production environment
 
 ```

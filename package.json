@@ -6,7 +6,7 @@
     "scripts": {
         "build": "rm -rf ./dist && tsc",
         "setup": "ts-node setup.ts",
-        "test": "node tests/ci.inspect.js",
+        "test": "ts-node tests/ci.inspect.ts",
         "app": "nodemon --ignore tests app/index.js",
         "link": "ln -sf ../app node_modules/app",
         "lint": "./node_modules/.bin/eslint --fix app",
@@ -48,6 +48,7 @@
         "winston-daily-rotate-file": "^4.5.0"
     },
     "devDependencies": {
+        "@types/lodash": "^4.14.169",
         "chai": "^4.3.0",
         "eslint": "^7.17.0",
         "eslint-plugin-mocha": "^8.0.0",

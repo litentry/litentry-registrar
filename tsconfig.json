@@ -13,10 +13,9 @@
       "strictPropertyInitialization": false,
       "target": "es6"
   },
-  "exclude": [
-    "tests/**/*.ts"
-  ],
+  "exclude": [],
   "include": [
-      "./setup.ts"
+      "./setup.ts",
+      "tests/**/*.ts"
   ]
 }
