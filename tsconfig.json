@@ -16,6 +16,7 @@
   "exclude": [],
   "include": [
       "./setup.ts",
+      "app/**/*.ts",
       "tests/**/*.ts"
   ]
 }
