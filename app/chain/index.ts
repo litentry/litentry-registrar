@@ -9,7 +9,6 @@ import logger from 'app/logger';
 import config from 'app/config';
 import { ValidatorEvent } from 'app/validator/events';
 import { throttle, generateNonce, sleep } from 'app/utils';
-import { UnsubscribePromise } from '@polkadot/api/types';
 import Config from '../../types/config';
 
 const Event = new EventEmitter();
@@ -59,14 +58,9 @@ class Chain {
 
     private firstConnected: boolean = false;
 
-    private unsubscribeEventListener?: UnsubscribePromise;
+    private unsubscribeEventListener?: () => void;
 
     private myself: KeyringPair;
-    alice: KeyringPair;
-    bob: KeyringPair;
-    charlie: KeyringPair;
-    dave: KeyringPair;
-    eve: KeyringPair;
 
     /**
      * A wrapped APIs for block chain
@@ -117,14 +111,14 @@ class Chain {
      */
     async eventListenerStart() {
         if (this.unsubscribeEventListener) {
-            logger.debug('[EventListenerStart] Event listener is running now...');
-            return this.unsubscribeEventListener;
+            logger.debug('[EventListenerStart] Event listener is already running...');
+            return;
         }
 
         await this.connect();
 
         logger.debug('[EventListenerStart] Starting event listener...');
-        this.unsubscribeEventListener = this.api.query.system.events((events) => {
+        this.unsubscribeEventListener = await this.api.query.system.events((events) => {
             // Loop through the Vec<EventRecord>
             events.forEach((record) => {
                 // Extract the phase, event and the event types
@@ -191,12 +185,10 @@ class Chain {
     /**
      * Stop event listener
      */
-    async eventListenerStop() {
+    eventListenerStop() {
         logger.debug('[EventListenerStop] Stopping event listener...');
         if (this.unsubscribeEventListener) {
-            // TODO_CHECK I suspect some of the issues with the file are to do with this
-            // this.unsubscribeEventListener(); <-- this is not callable as unsubscribeEventListener is a promise, not a function that returns a promise
-            await this.unsubscribeEventListener;
+            this.unsubscribeEventListener();
         }
         this.unsubscribeEventListener = undefined;
     }
@@ -206,7 +198,7 @@ class Chain {
      */
     async eventListenerRestart() {
         logger.debug('[EventListenerRestart] Restarting event listener...');
-        await this.eventListenerStop();
+        this.eventListenerStop();
         await this.eventListenerStart();
     }
 
@@ -325,9 +317,6 @@ async function handleRequestJudgement(accountID: string) {
             // TODO: support pgp finger print and image
         } = {
             account: accountID,
-            // TODO_CHECK do we specifically need nulls below or is undefined ok?
-            // I removed the else conditions with the nulls, I can default them all to null here
-            // or just leave them undefined
         };
 
         if (info.display.Raw && info.display.Raw.startsWith('0x')) {
