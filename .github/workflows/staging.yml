@@ -35,7 +35,6 @@ jobs:
           echo NODE_ENV=$NODE_ENV > $TARGET_DIR/.env
           yarn
           yarn run build
-          yarn run link
           yarn start &> /dev/null
           sleep 5
           yarn run setup

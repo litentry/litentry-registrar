@@ -16,8 +16,8 @@ import { AddressOrPair, ApiTypes, SubmittableExtrinsic } from '@polkadot/api/typ
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AccountId } from '@polkadot/types/interfaces/runtime';
 import { blake2AsHex } from '@polkadot/util-crypto';
-import config from './app/config';
-import Config from './types/config';
+import config from 'app/config';
+import Config from 'types/config';
 import { AnyJson, ISubmittableResult } from '@polkadot/types/types';
 
 // DEFUALT FEE is 1 Unit

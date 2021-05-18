@@ -9,7 +9,7 @@ import logger from 'app/logger';
 import config from 'app/config';
 import { ValidatorEvent } from 'app/validator/events';
 import { throttle, generateNonce, sleep } from 'app/utils';
-import Config from '../../types/config';
+import Config from 'types/config';
 
 const Event = new EventEmitter();
 

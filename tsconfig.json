@@ -1,26 +1,26 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
-    "esModuleInterop": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "noImplicitAny": true,
-    "outDir": "dist",
-    "sourceMap": true,
-    "strict": true,
-    "strictPropertyInitialization": false,
-    "target": "es6",
-    "paths": {
-	  "matrix-js-sdk": [
-	    "node_modules/@types/matrix-js-sdk/index.d.ts"
-	  ]
-    }
+      "allowJs": true,
+      "allowSyntheticDefaultImports": true,
+      "baseUrl": "./",
+      "esModuleInterop": true,
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "noImplicitAny": true,
+      "outDir": "dist",
+      "paths": {
+          "matrix-js-sdk": ["node_modules/@types/matrix-js-sdk/index.d.ts"],
+          "app/*": ["app/*"],
+          "tests/*": ["tests/*"]
+      },
+      "sourceMap": true,
+      "strict": true,
+      "strictPropertyInitialization": false,
+      "target": "es6"
   },
   "exclude": ["node_modules/matrix-js-sdk/lib/*.d.ts"],
   "include": [
-    "./setup.ts",
+    "setup.ts",
     "app/**/*.ts",
     "app/**/*.js",
     "tests/**/*.ts"
