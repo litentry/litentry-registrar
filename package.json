@@ -4,7 +4,7 @@
     "description": "Litentry Polkadot/Kusama Registrar",
     "main": "index.js",
     "scripts": {
-        "build": "rm -rf ./dist && tsc && cp -R app/validator/templates dist/app/validator",
+        "build": "rm -rf ./dist && tsc && cp -R app/validator/templates dist/app/validator && cp -R app/pages/templates dist/app/pages",
         "setup": "NODE_PATH=./ ts-node setup.ts",
         "test": "NODE_PATH=./ ts-node tests/ci.inspect.ts",
         "app": "NODE_PATH=./ nodemon --ignore tests --ext ts,js --exec 'ts-node app/index.js'",
