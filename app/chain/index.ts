@@ -319,28 +319,28 @@ async function handleRequestJudgement(accountID: string) {
             account: accountID,
         };
 
-        if (info.display.Raw && info.display.Raw.startsWith('0x')) {
-            normalizedInfo.display = hexToUtf8(info.display.Raw.substring(2));
+        if (info.display.raw && info.display.raw.startsWith('0x')) {
+            normalizedInfo.display = hexToUtf8(info.display.raw.substring(2));
         }
 
-        if (info.legal.Raw && info.legal.Raw.startsWith('0x')) {
-            normalizedInfo.legal = hexToUtf8(info.legal.Raw.substring(2));
+        if (info.legal.raw && info.legal.raw.startsWith('0x')) {
+            normalizedInfo.legal = hexToUtf8(info.legal.raw.substring(2));
         }
 
-        if (info.web.Raw && info.web.Raw.startsWith('0x')) {
-            normalizedInfo.web = hexToUtf8(info.web.Raw.substring(2));
+        if (info.web.raw && info.web.raw.startsWith('0x')) {
+            normalizedInfo.web = hexToUtf8(info.web.raw.substring(2));
         }
 
-        if (info.riot.Raw && info.riot.Raw.startsWith('0x')) {
-            normalizedInfo.riot = hexToUtf8(info.riot.Raw.substring(2));
+        if (info.riot.raw && info.riot.raw.startsWith('0x')) {
+            normalizedInfo.riot = hexToUtf8(info.riot.raw.substring(2));
         }
 
-        if (info.email.Raw && info.email.Raw.startsWith('0x')) {
-            normalizedInfo.email = hexToUtf8(info.email.Raw.substring(2));
+        if (info.email.raw && info.email.raw.startsWith('0x')) {
+            normalizedInfo.email = hexToUtf8(info.email.raw.substring(2));
         }
 
-        if (info.twitter.Raw && info.twitter.Raw.startsWith('0x')) {
-            normalizedInfo.twitter = hexToUtf8(info.twitter.Raw.substring(2));
+        if (info.twitter.raw && info.twitter.raw.startsWith('0x')) {
+            normalizedInfo.twitter = hexToUtf8(info.twitter.raw.substring(2));
             if (normalizedInfo.twitter.startsWith('@')) {
                 normalizedInfo.twitter = normalizedInfo.twitter.substring(1);
             }
