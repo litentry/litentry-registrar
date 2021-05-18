@@ -1,6 +1,7 @@
 delete process.env.NODE_ENV;
 
 import dotenv from 'dotenv';
+import util from 'util';
 
 const result = dotenv.config({ debug: true });
 
@@ -153,7 +154,7 @@ class Chain {
         await this.identitySetIdentity(this.bob, info);
         await sleep(DEFAULT_SLEEP_INTERVAL);
         await this.identityRequestJudgement(this.bob);
-        await sleep(90);
+        await sleep(60);
         [queriedObject] = await RequestJudgementCollection.query(info);
 
         console.log('queriedObject: ');
@@ -167,16 +168,16 @@ class Chain {
         await RequestJudgementCollection.setEmailVerifiedSuccessById(queriedObject._id);
         await RequestJudgementCollection.setRiotVerifiedSuccessById(queriedObject._id);
         await RequestJudgementCollection.setTwitterVerifiedSuccessById(queriedObject._id);
-        await sleep(60);
+        await sleep(90);
 
         let _bobIdentity = await this.api.query.identity.identityOf(this.bob.address);
         const bobIdentity = JSON.parse(`${_bobIdentity}`);
         const regIndex = 0;
-        console.log(bobIdentity);
+        console.log(util.inspect(bobIdentity, { showHidden: true, depth: null }));
         if (
             bobIdentity.judgements &&
             bobIdentity.judgements[0][0] === regIndex &&
-            _.keys(bobIdentity.judgements[0][1])[0] === 'Reasonable'
+            _.keys(bobIdentity.judgements[0][1])[0] === 'reasonable'
         ) {
             console.log('-------------------- CI Succeeded --------------------');
             process.exit(0);
