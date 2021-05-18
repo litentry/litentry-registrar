@@ -426,6 +426,11 @@
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.169.tgz#83c217688f07a4d9ef8f28a3ebd1d318f6ff4cbb"
   integrity sha512-DvmZHoHTFJ8zhVYwCLWbQ7uAbYQEk52Ev2/ZiQ7Y7gQGeV9pjBqjnQpECMHfKS1rCYAhMI7LHVxwyZLZinJgdw==
 
+"@types/matrix-js-sdk@^9.2.5":
+  version "9.2.5"
+  resolved "https://registry.yarnpkg.com/@types/matrix-js-sdk/-/matrix-js-sdk-9.2.5.tgz#3660d4287bb58e8ef844713998e0099c5f75528c"
+  integrity sha512-tB24TztmqnIMpYuGUGQmNrGMDWivj70BkOvR8Jv8WsbcBhOy/ix9fu/x6jdjFbBCRRiKV2ktvBJXcvfUhZtfKg==
+
 "@types/node-fetch@^2.5.8":
   version "2.5.10"
   resolved "https://registry.yarnpkg.com/@types/node-fetch/-/node-fetch-2.5.10.tgz#9b4d4a0425562f9fcea70b12cb3fcdd946ca8132"
