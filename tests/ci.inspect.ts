@@ -13,9 +13,9 @@ import _ from 'lodash';
 import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import { AddressOrPair, ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
-import config from '../app/config';
-import Config from '../types/config';
-import { RequestJudgementCollection } from '../app/db';
+import config from 'app/config';
+import Config from 'types/config';
+import { RequestJudgementCollection } from 'app/db';
 
 /**
  * See @href https://wiki.polkadot.network/docs/en/learn-identity
