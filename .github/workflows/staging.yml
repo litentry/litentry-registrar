@@ -35,6 +35,7 @@ jobs:
           echo NODE_ENV=$NODE_ENV > $TARGET_DIR/.env
           yarn
           yarn run build
+          [[ $(pm2 list 0 | grep onlinex | wc -l) -ne 0 ]] && pm2 stop 0
           yarn start &> /dev/null
           sleep 5
           yarn run setup
