@@ -16,8 +16,6 @@ Litentry Polkadot/Kusama Registrar
 
 - Install packages: `yarn`.
 
-- Enable absolute import paths by running `yarn run link`.
-
 - Before running the app, you need to decrypt the config files. For this you will need the key on your machine, then run: `git-crypt unlock /path/to/key`.
 
 - Add a new registrar account on our development chain: `yarn run setup`.
