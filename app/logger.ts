@@ -1,13 +1,13 @@
-'use strict';
+import fs from 'fs';
+import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
+import { ConsoleTransportInstance } from 'winston/lib/winston/transports';
 
-const fs = require('fs');
-const winston = require('winston');
-const DailyRotateFile = require('winston-daily-rotate-file');
 const { combine, timestamp, printf, colorize } = winston.format;
 
 let logPath = null;
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     logPath = './log/litentry/registrar';
 } else {
     logPath = '/var/log/litentry/registrar';
@@ -21,7 +21,9 @@ const myFormat = printf(({ level, message, timestamp }) => {
     return `${timestamp}--${level}--${message}`;
 });
 
-const transports = [
+type Transports = DailyRotateFile | ConsoleTransportInstance;
+
+const transports: Transports[] = [
     new DailyRotateFile({
         level: 'debug',
         filename: `${logPath}/debug-%DATE%.log`,
@@ -54,12 +56,9 @@ transports.push(
     })
 );
 
-function getLogger() {
-    const logger = winston.createLogger({
-        format: combine(timestamp(), colorize(), myFormat),
-        transports: transports,
-    });
-    return logger;
-}
+const logger = winston.createLogger({
+    format: combine(timestamp(), colorize(), myFormat),
+    transports: transports,
+});
 
-module.exports = getLogger();
+export default logger;

@@ -13,7 +13,7 @@ import Config from 'types/config';
 
 const Event = new EventEmitter();
 
-enum JudgementType {
+export enum JudgementType {
     Unknown = 'Unknown',
     FeePaid = 'FeePaid',
     Reasonable = 'Reasonable',
@@ -313,7 +313,7 @@ async function handleRequestJudgement(accountID: string) {
             image?: string;
             twitter?: string;
             nonce?: string;
-            _id?: number;
+            _id?: string;
             // TODO: support pgp finger print and image
         } = {
             account: accountID,
@@ -397,4 +397,4 @@ Event.on('handleUnRequestJudgement', async (accountID: string) => {
     return await func(accountID);
 });
 
-module.exports = chain;
+export default chain;

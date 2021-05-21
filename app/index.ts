@@ -1,17 +1,22 @@
-'use strict';
-
 // Ensure the NODE_ENV is loaded from .env
 delete process.env.NODE_ENV;
-const result = require('dotenv').config({ debug: true });
+import dotenv from 'dotenv';
+
+const result = dotenv.config({ debug: true });
 
 if (result.error) {
     throw result.error;
 }
-const chalk = require('chalk');
-const cluster = require('cluster');
 
-const Chain = require('app/chain');
-const logger = require('app/logger');
+import chalk from 'chalk';
+import cluster from 'cluster';
+import express from 'express';
+
+import Chain from 'app/chain';
+import logger from 'app/logger';
+import config from 'app/config';
+import MyRouter from 'app/router';
+import { ProvideJudgementJob, ElementJob, EmailJob, TwitterJob } from 'app/jobs';
 
 if (cluster.isMaster) {
     logger.debug(chalk.green(`Master process ${process.pid} is running...`));
@@ -50,22 +55,22 @@ if (cluster.isMaster) {
             logger.info(chalk.red(`Invalid worker ${worker.id} received`));
         }
     });
+    // @ts-ignore
 } else if (cluster.worker.process.env.type === 'provide_judgement_process') {
-    const { ProvideJudgementJob } = require('app/jobs');
     logger.info(chalk.green(`Start ProvideJudgement cron job`));
     (async () => {
         await ProvideJudgementJob();
     })();
+    // @ts-ignore
 } else if (cluster.worker.process.env.type === 'web_server_process') {
-    const config = require('app/config').http;
-
-    const express = require('express');
-    const bodyParser = require('body-parser');
-    const MyRouter = require('app/router');
     const app = express();
 
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(express.json());
+    app.use(
+        express.urlencoded({
+            extended: true,
+        })
+    );
 
     app.use('/', (req, res, next) => {
         // TODO: Use json web token
@@ -73,7 +78,7 @@ if (cluster.isMaster) {
             const username = req.query.username || req.body.username;
             const password = req.query.password || req.body.password;
 
-            if (config.username !== username || config.password !== password) {
+            if (config.http.username !== username || config.http.password !== password) {
                 return res.json({ status: 'failed', msg: `No rights to access api ${req.path}` });
             }
         }
@@ -83,35 +88,37 @@ if (cluster.isMaster) {
     app.use('/', MyRouter);
 
     /* Listen on port */
-    app.listen(config.port);
+    app.listen(config.http.port);
     /* Log some basic information */
-    logger.info(chalk.green(`Process ${process.pid} is listening on: ${config.port}`));
+    logger.info(chalk.green(`Process ${process.pid} is listening on: ${config.http.port}`));
     logger.info(chalk.green(`NODE_ENV: ${process.env.NODE_ENV}`));
     /* Auto Restart chain event listener */
     (async () => {
         await Chain.eventListenerAutoRestart();
     })();
+    // @ts-ignore
 } else if (cluster.worker.process.env.type === 'element_verification_process') {
     /// start element verification process
-    const { ElementJob } = require('app/jobs');
     logger.info(chalk.green(`Start Element cron job`));
     (async () => {
         await ElementJob();
     })();
+    // @ts-ignore
 } else if (cluster.worker.process.env.type === 'email_verification_process') {
     /// start email verification process
-    const { EmailJob } = require('app/jobs');
     logger.info(chalk.green(`Start Email cron job`));
     (async () => {
         await EmailJob();
     })();
+    // @ts-ignore
 } else if (cluster.worker.process.env.type === 'twitter_verification_process') {
-    const { TwitterJob } = require('app/jobs');
     logger.info(chalk.green(`Start Twitter cron job`));
     (async () => {
         await TwitterJob();
     })();
 } else {
+    // @ts-ignore
     logger.error(`Unknown worker type ${cluster.worker.process.env.type}`);
+    // @ts-ignore
     throw new Error(`Unknown worker type ${cluster.worker.process.env.type}`);
 }
