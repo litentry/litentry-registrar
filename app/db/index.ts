@@ -1,15 +1,26 @@
-const _ = require('lodash');
-const MongoClient = require('mongodb').MongoClient;
-const { ObjectId } = require('mongodb');
+import _ from 'lodash';
+import { Db, FilterQuery, MongoClient, ObjectId } from 'mongodb';
 
-const config = require('app/config').mongodb;
-const logger = require('app/logger');
+import config from 'app/config';
+import logger from 'app/logger';
+
+type MongoConfig = {
+    host: string;
+    port: number;
+    dbName: string;
+    username: string;
+    password: string;
+};
 
 class MongodbStorage {
-    constructor(config) {
+    private readonly config: MongoConfig;
+
+    private client?: MongoClient;
+
+    public database: Db;
+
+    constructor(config: MongoConfig) {
         this.config = config;
-        this.client = null;
-        this.database = null;
     }
 
     /**
@@ -32,7 +43,7 @@ class MongodbStorage {
         }
         this.client = new MongoClient(endpoint);
 
-        if (! this.client.isConnected()) {
+        if (!this.client.isConnected()) {
             await this.client.connect();
             this.database = this.client.db(this.config.dbName);
             logger.info(`[MongodbStorage.connect] connect to mongodb successfully.`);
@@ -44,19 +55,19 @@ class MongodbStorage {
     async disconnect() {
         if (this.client) {
             await this.client.close();
-            this.client = null;
+            this.client = undefined;
         }
     }
     /**
      * @param {String} collection - the collection to be queried inside mongodb database
-     * @param {*} filter - a filter applied to obtain specific rows
+     * @param {FilterQuery} filter - a filter applied to obtain specific rows
      * @return {*} return a qualified row
      */
-    async query(collection, filter) {
+    async query(collection: string, filter: FilterQuery<any>) {
         await this.connect();
 
         if (_.keys(filter).includes('_id') && _.isString(filter['_id'])) {
-            filter['_id'] = ObjectId(filter['_id']);
+            filter['_id'] = new ObjectId(filter['_id']);
         }
 
         const _collection = this.database.collection(collection);
@@ -65,12 +76,13 @@ class MongodbStorage {
         return results;
     }
 
-    async queryById(collection, id) {
+    async queryById(collection: string, id: string | ObjectId): Promise<any[]> {
         let _id = id;
         if (_.isString(id)) {
-            _id = ObjectId(id);
+            _id = new ObjectId(id);
         }
-        return await this.query(collection, { _id: _id });
+        const result = await this.query(collection, { _id: _id });
+        return result;
     }
 
     /**
@@ -78,7 +90,7 @@ class MongodbStorage {
      * @param {*} content - the content to be inserted into database
      * @return {String} return insertedKey associated with this document
      */
-    async insert(collection, content) {
+    async insert(collection: string, content: object): Promise<string> {
         await this.connect();
         const _collection = this.database.collection(collection);
         const result = await _collection.insertOne({ ...content, createdAt: new Date(), updatedAt: new Date() });
@@ -94,11 +106,11 @@ class MongodbStorage {
      * @param {*} content - the content to be updated
      * @return {String} return insertedKey associated with this document
      */
-    async update(collection, filter, content) {
+    async update(collection: string, filter: FilterQuery<any>, content: object) {
         await this.connect();
 
         if (_.keys(filter).includes('_id') && _.isString(filter['_id'])) {
-            filter['_id'] = ObjectId(filter['_id']);
+            filter['_id'] = new ObjectId(filter['_id']);
         }
         const options = { upsert: true };
 
@@ -107,83 +119,89 @@ class MongodbStorage {
         const result = await _collection.updateOne(filter, updateDoc, options);
         logger.debug(`[MongodbStorage.update] update ${result.modifiedCount} document into ${collection}`);
     }
-    async updateById(collection, id, content) {
+
+    async updateById(collection: string, id: string, content: object) {
         const filter = { _id: id };
         return await this.update(collection, filter, content);
     }
 }
 
 class RequestJudgementCollection {
-    constructor(db) {
+    public readonly db: MongodbStorage;
+
+    private readonly collectionName = 'requestJudgement';
+
+    constructor(db: MongodbStorage) {
         this.db = db;
-        this.collectionName = 'requestJudgement';
     }
-    async insert(content) {
+
+    async insert(content: object) {
         return await this.db.insert(this.collectionName, content);
     }
-    async updateById(id, content) {
+
+    async updateById(id: string, content: object) {
         return await this.db.updateById(this.collectionName, id, content);
     }
 
-    async query(filter) {
+    async query(filter: FilterQuery<any>) {
         const results = await this.db.query(this.collectionName, filter);
         return results;
     }
 
-    async setEmailVerifiedPendingById(id, addition = {}) {
+    async setEmailVerifiedPendingById(id: string, addition = {}) {
         const filter = { _id: id };
         const content = { emailStatus: 'pending', ...addition };
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async setEmailVerifiedSuccessById(id) {
+    async setEmailVerifiedSuccessById(id: string) {
         const filter = { _id: id };
         const content = { emailStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async setEmailVerifiedFailedById(id) {
+    async setEmailVerifiedFailedById(id: string) {
         const filter = { _id: id };
         const content = { emailStatus: 'verifiedFailed' };
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async setTwitterVerifiedPendingById(id, addition = {}) {
+    async setTwitterVerifiedPendingById(id: string, addition = {}) {
         const filter = { _id: id };
         const content = { twitterStatus: 'pending', ...addition };
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async setTwitterVerifiedSuccessById(id) {
+    async setTwitterVerifiedSuccessById(id: string) {
         const filter = { _id: id };
         const content = { twitterStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }
-    async setTwitterVerifiedFailedById(id) {
+    async setTwitterVerifiedFailedById(id: string) {
         const filter = { _id: id };
         const content = { twitterStatus: 'verifiedFailed' };
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async setRiotVerifiedPendingById(id, addition = {}) {
+    async setRiotVerifiedPendingById(id: string, addition: object = {}) {
         const filter = { _id: id };
         const content = { riotStatus: 'pending', ...addition };
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async setRiotVerifiedSuccessById(id) {
+    async setRiotVerifiedSuccessById(id: string) {
         const filter = { _id: id };
         const content = { riotStatus: 'verifiedSuccess' };
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async setRiotVerifiedFailedById(id) {
+    async setRiotVerifiedFailedById(id: string) {
         const filter = { _id: id };
         const content = { riotStatus: 'verifiedFailed' };
         return await this.db.update(this.collectionName, filter, content);
     }
 
-    async cancel(account) {
+    async cancel(account: string) {
         /* The account is still not verified, we can set it to be cancelled  */
         await this.db.connect();
         const _collection = this.db.database.collection(this.collectionName);
@@ -196,29 +214,32 @@ class RequestJudgementCollection {
 }
 
 class RiotCollection {
-    constructor(db) {
+    public readonly db: MongodbStorage;
+
+    private readonly collectionName = 'riot';
+
+    constructor(db: MongodbStorage) {
         this.db = db;
-        this.collectionName = 'riot';
     }
 
-    async upsert(riot, content) {
+    async upsert(riot: string, content: object) {
         return await this.db.update(this.collectionName, { riot: riot }, content);
     }
 
-    async query(filter) {
+    async query(filter: FilterQuery<any>) {
         const results = await this.db.query(this.collectionName, filter);
         return results;
     }
 }
 
-if (!config) {
+if (!config.mongodb) {
     throw new Error('Add configuration for mongodb.');
 }
 
-const storage = new MongodbStorage(config);
+const storage = new MongodbStorage(config.mongodb);
+const requestJudgementCollection = new RequestJudgementCollection(storage);
+const riotCollection = new RiotCollection(storage);
 
-module.exports = {
-    Storage: storage,
-    RequestJudgementCollection: new RequestJudgementCollection(storage),
-    RiotCollection: new RiotCollection(storage),
-};
+export { requestJudgementCollection as RequestJudgementCollection };
+export { storage as Storage };
+export { riotCollection as RiotCollection };

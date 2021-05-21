@@ -4,3 +4,6 @@
 app/config/development.js filter=git-crypt diff=git-crypt
 app/config/staging.js filter=git-crypt diff=git-crypt
 app/config/production.js filter=git-crypt diff=git-crypt
+app/config/development.ts filter=git-crypt diff=git-crypt
+app/config/staging.ts filter=git-crypt diff=git-crypt
+app/config/production.ts filter=git-crypt diff=git-crypt
