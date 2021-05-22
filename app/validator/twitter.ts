@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { EventsNewParams, TwitterClient, UsersLookup } from 'twitter-api-client';
+import { EventsNewParams, TwitterClient } from 'twitter-api-client';
 import logger from 'app/logger';
 import config from 'app/config';
 import Validator from 'app/validator/base';
@@ -12,8 +12,6 @@ const CHAIN_NAME = config.chain.name || '';
 
 class TwitterValidator extends Validator {
     private readonly client: TwitterClient;
-
-    private readonly _is_twitter_verified = undefined;
 
     constructor(config: Config) {
         super(config);
@@ -111,7 +109,7 @@ class TwitterValidator extends Validator {
                 message_create: {
                     target: {
                         /// NOTE: at most *one* result
-                        recipient_id: resp[0].id_str,
+                        recipient_id: userId!,
                     },
                     message_data: {
                         text: content,

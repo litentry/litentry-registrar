@@ -11,9 +11,7 @@ import Config from 'types/config';
 const CHAIN_NAME = config.chain.name || '';
 
 class ElementValidator extends Validator {
-    private readonly chainName = 'kusama';
     private readonly maxRetries = 10;
-    private readonly pollingRoomMessageInterval = 3;
     private readonly pollingRoomInterval = 2;
     private readonly client: MatrixClient;
 

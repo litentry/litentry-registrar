@@ -8,7 +8,7 @@ if (result.error) {
     throw result.error;
 }
 
-import chalk from 'chalk';
+import colors from 'colors/safe';
 import cluster from 'cluster';
 import express from 'express';
 
@@ -19,7 +19,7 @@ import MyRouter from 'app/router';
 import { ProvideJudgementJob, ElementJob, EmailJob, TwitterJob } from 'app/jobs';
 
 if (cluster.isMaster) {
-    logger.debug(chalk.green(`Master process ${process.pid} is running...`));
+    logger.debug(colors.green(`Master process ${process.pid} is running...`));
     // Fork workers
     let provideJudgementWorker = cluster.fork({ type: 'provide_judgement_process' });
 
@@ -31,33 +31,33 @@ if (cluster.isMaster) {
 
     cluster.on('exit', (worker, code, signal) => {
         if (signal) {
-            logger.warn(chalk.yellow(`Worker was killed by signal: ${signal}`));
+            logger.warn(colors.yellow(`Worker was killed by signal: ${signal}`));
         } else if (code != 0) {
-            logger.warn(chalk.yellow(`Worker exited with error code: ${code}`));
+            logger.warn(colors.yellow(`Worker exited with error code: ${code}`));
         }
 
         if (worker.id === provideJudgementWorker.id) {
-            logger.info(chalk.green('Restarting provideJudgement worker...'));
+            logger.info(colors.green('Restarting provideJudgement worker...'));
             provideJudgementWorker = cluster.fork({ type: 'provide_judgement_process' });
         } else if (worker.id === webServerWorker.id) {
-            logger.info(chalk.green('Restarting webServer worker...'));
+            logger.info(colors.green('Restarting webServer worker...'));
             webServerWorker = cluster.fork({ type: 'web_server_process' });
         } else if (worker.id === elementWorker.id) {
-            logger.info(chalk.green('Restarting element worker...'));
+            logger.info(colors.green('Restarting element worker...'));
             elementWorker = cluster.fork({ type: 'element_verification_process' });
         } else if (worker.id === emailWorker.id) {
-            logger.info(chalk.green('Restarting email worker...'));
+            logger.info(colors.green('Restarting email worker...'));
             emailWorker = cluster.fork({ type: 'email_verification_process' });
         } else if (worker.id === twitterWorker.id) {
-            logger.info(chalk.green('Restarting twitter worker...'));
+            logger.info(colors.green('Restarting twitter worker...'));
             twitterWorker = cluster.fork({ type: 'twitter_verification_process' });
         } else {
-            logger.info(chalk.red(`Invalid worker ${worker.id} received`));
+            logger.info(colors.red(`Invalid worker ${worker.id} received`));
         }
     });
     // @ts-ignore
 } else if (cluster.worker.process.env.type === 'provide_judgement_process') {
-    logger.info(chalk.green(`Start ProvideJudgement cron job`));
+    logger.info(colors.green(`Start ProvideJudgement cron job`));
     (async () => {
         await ProvideJudgementJob();
     })();
@@ -90,8 +90,8 @@ if (cluster.isMaster) {
     /* Listen on port */
     app.listen(config.http.port);
     /* Log some basic information */
-    logger.info(chalk.green(`Process ${process.pid} is listening on: ${config.http.port}`));
-    logger.info(chalk.green(`NODE_ENV: ${process.env.NODE_ENV}`));
+    logger.info(colors.green(`Process ${process.pid} is listening on: ${config.http.port}`));
+    logger.info(colors.green(`NODE_ENV: ${process.env.NODE_ENV}`));
     /* Auto Restart chain event listener */
     (async () => {
         await Chain.eventListenerAutoRestart();
@@ -99,20 +99,20 @@ if (cluster.isMaster) {
     // @ts-ignore
 } else if (cluster.worker.process.env.type === 'element_verification_process') {
     /// start element verification process
-    logger.info(chalk.green(`Start Element cron job`));
+    logger.info(colors.green(`Start Element cron job`));
     (async () => {
         await ElementJob();
     })();
     // @ts-ignore
 } else if (cluster.worker.process.env.type === 'email_verification_process') {
     /// start email verification process
-    logger.info(chalk.green(`Start Email cron job`));
+    logger.info(colors.green(`Start Email cron job`));
     (async () => {
         await EmailJob();
     })();
     // @ts-ignore
 } else if (cluster.worker.process.env.type === 'twitter_verification_process') {
-    logger.info(chalk.green(`Start Twitter cron job`));
+    logger.info(colors.green(`Start Twitter cron job`));
     (async () => {
         await TwitterJob();
     })();
