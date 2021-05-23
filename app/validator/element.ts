@@ -1,42 +1,40 @@
-const _ = require('lodash');
-const sdk = require('matrix-js-sdk');
-const config = require('app/config');
-const logger = require('app/logger');
-const Validator = require('app/validator/base');
-const { ValidatorEvent } = require('app/validator/events');
-const { RequestJudgementCollection, RiotCollection } = require('app/db');
-
-const utils = require('app/utils');
+import _ from 'lodash';
+import { createClient, MatrixClient, Room } from 'matrix-js-sdk';
+import config from 'app/config';
+import logger from 'app/logger';
+import Validator from './base';
+import { ValidatorEvent } from 'app/validator/events';
+import { RequestJudgementCollection, RiotCollection } from 'app/db';
+import { createJwtToken } from 'app/utils';
+import Config from 'types/config';
 
 const CHAIN_NAME = config.chain.name || '';
 
 class ElementValidator extends Validator {
-    constructor(config) {
+    private readonly maxRetries = 10;
+    private readonly pollingRoomInterval = 2;
+    private readonly client: MatrixClient;
+
+    constructor(config: Config) {
         super(config);
-        const { accessToken, userId, homeServerUrl } = config;
-        this.client = sdk.createClient({
+        const { accessToken, userId, homeServerUrl } = config.elementValidator;
+        this.client = createClient({
             baseUrl: homeServerUrl,
             accessToken: accessToken,
             userId: userId,
-            cacheLevel: -1,
         });
-        this.chainName = 'kusama';
-        this.maxRetries = 10;
-        this.pollingRoomMessageInterval = 3;
-        this.pollingRoomInterval = 2;
     }
 
-    async _invoke(riotAccount, token, account) {
-        let self = this;
+    async _invoke(riotAccount: string, token: string, account: string) {
         let roomId = null;
-        let client = self.client;
 
         /// If the client is not running, start the client
-        if (!client.clientRunning) {
+        // @ts-ignore
+        if (!this.client.clientRunning) {
             /// NOTE: Do nothing, but listening for incoming messages. Do not remove !
             /// Capture user input events
-            client.on('Room.timeline', async function (/* event, room, toStartOfTimeline, removed, data */) {});
-            await client.startClient();
+            this.client.on('Room.timeline', async function (/* event, room, toStartOfTimeline, removed, data */) {});
+            await this.client.startClient();
         }
 
         const results = await RiotCollection.query({ riot: riotAccount });
@@ -44,28 +42,28 @@ class ElementValidator extends Validator {
             roomId = results[0].roomId;
             logger.debug(`Already has room for riot user: ${riotAccount}, room id: ${roomId}`);
         } else {
-            roomId = await self.createRoom(riotAccount);
+            roomId = await this.createRoom(riotAccount);
         }
         /// Fetch this room from remote.
         /// Make sure we obtain an avaiable room instance
         /// If we cannot fetch the room instance, it means this room is destroyed by user (admin) manually.
         /// We need to create a new one.
-        let room = await self.getRoom(roomId);
+        let room = await this.getRoom(roomId);
         if (_.isEmpty(room)) {
             logger.debug(`Create a new room since the old room ${roomId} isn't found`);
-            roomId = await self.createRoom(riotAccount);
-            room = await self.getRoom(roomId);
+            roomId = await this.createRoom(riotAccount);
+            room = await this.getRoom(roomId);
         }
 
         /// Check if the target riot account join our room or not
         /// If yes, we needn't to invite him/her again
         /// otherwise, we send an invitation request to target riot user
-        const joinedMembers = room.getMembersWithMembership('join');
+        const joinedMembers = room!.getMembersWithMembership('join');
         const isNotJoined = _.isEmpty(_.find(joinedMembers, ['userId', riotAccount]));
 
         if (isNotJoined) {
             logger.debug(`Riot user ${riotAccount} isn't joined the room.`);
-            const invitedMembers = room.getMembersWithMembership('invite');
+            const invitedMembers = room!.getMembersWithMembership('invite');
             /// Expectation: the `invitedMembers` only contains at most *one* element, and the `userId`
             /// should be equal to our `riotAccount`.
             /// However, the invited user may be corrupted by malicious user.
@@ -79,7 +77,7 @@ class ElementValidator extends Validator {
                 logger.debug(`Already invited user ${riotAccount}, no need to invite again`);
             } else {
                 logger.debug(`Inviting user ${riotAccount}`);
-                await self.invite(roomId, riotAccount);
+                await this.invite(roomId, riotAccount);
             }
         } else {
             logger.debug(`Riot user ${riotAccount} already joined the room.`);
@@ -100,12 +98,13 @@ class ElementValidator extends Validator {
             msgtype: 'm.text',
         };
 
-        const resp = await self.sendMessage(roomId, content);
+        const resp = await this.sendMessage(roomId, content);
         return resp;
     }
-    async invoke(info) {
+
+    async invoke(info: { nonce: string; _id: string; riot: string; account: string }) {
         const riotAccount = info.riot;
-        const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
+        const token = createJwtToken({ nonce: info.nonce, _id: info._id });
         try {
             await this._invoke(riotAccount, token, info.account);
             await RequestJudgementCollection.setRiotVerifiedPendingById(info._id);
@@ -116,34 +115,19 @@ class ElementValidator extends Validator {
         }
     }
 
-    async invite(roomId, riotAccount) {
-        let self = this;
-        return new Promise((resolve, reject) => {
-            self.client.invite(roomId, riotAccount, function (err, res) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(res);
-                }
-            });
-        });
+    async invite(roomId: string, riotAccount: string) {
+        const result = await this.client.invite(roomId, riotAccount);
+        return result;
     }
-    async sendMessage(roomId, content) {
-        let self = this;
-        return new Promise((resolve, reject) => {
-            self.client.sendEvent(roomId, 'm.room.message', content, '', (err, res) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(res);
-                }
-            });
-        });
+
+    async sendMessage(roomId: string, content: object) {
+        const result = await this.client.sendEvent(roomId, 'm.room.message', content, '');
+        return result;
     }
-    async createRoom(riotAccount) {
-        let self = this;
+
+    async createRoom(riotAccount: string) {
         logger.debug(`Create a new room for riot user: ${riotAccount}`);
-        const { room_id } = await self.client.createRoom({
+        const { room_id } = await this.client.createRoom({
             preset: 'trusted_private_chat',
             invite: [riotAccount],
             is_direct: true,
@@ -154,17 +138,17 @@ class ElementValidator extends Validator {
         await RiotCollection.upsert(riotAccount, { roomId: room_id, riot: riotAccount });
         return room_id;
     }
-    async getRoom(roomId) {
-        let self = this;
+
+    async getRoom(roomId: string): Promise<Room | null> {
         return new Promise((resolve) => {
             let retry = 0;
-            let room = null;
-            let handler = setInterval(() => {
+            let room: Room | null = null;
+            let handler = setInterval(async () => {
                 if (_.isEmpty(room)) {
                     logger.debug(`Try to retrive room by ${roomId}`);
-                    room = self.client.getRoom(roomId);
+                    room = await this.client.getRoom(roomId);
                     retry += 1;
-                    if (!_.isEmpty(room) || retry > self.maxRetries) {
+                    if (!_.isEmpty(room) || retry > this.maxRetries) {
                         logger.debug(`Fetched room by ${roomId} with retry count: ${retry}`);
                         clearInterval(handler);
                         resolve(room);
@@ -173,16 +157,16 @@ class ElementValidator extends Validator {
                     clearInterval(handler);
                     resolve(room);
                 }
-            }, self.pollingRoomInterval * 1000);
+            }, this.pollingRoomInterval * 1000);
         });
     }
 }
 
-const validator = new ElementValidator(config.elementValidator);
+const validator = new ElementValidator(config);
 
 ValidatorEvent.on('handleRiotVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle riot/element verification: ${JSON.stringify(info)}.`);
     await validator.invoke(info);
 });
 
-module.exports = validator;
+export default validator;

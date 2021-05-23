@@ -1,34 +1,34 @@
-const _ = require('lodash');
-const logger = require('app/logger');
-const config = require('app/config');
-const { TwitterClient } = require('twitter-api-client');
+import _ from 'lodash';
+import { EventsNewParams, TwitterClient } from 'twitter-api-client';
+import logger from 'app/logger';
+import config from 'app/config';
+import Validator from 'app/validator/base';
+import { ValidatorEvent } from 'app/validator/events';
+import { RequestJudgementCollection } from 'app/db';
+import { createJwtToken } from 'app/utils';
+import Config from 'types/config';
 
-const Validator = require('app/validator/base');
-
-const { ValidatorEvent } = require('app/validator/events');
-const { RequestJudgementCollection } = require('app/db');
-
-const utils = require('app/utils');
 const CHAIN_NAME = config.chain.name || '';
 
 class TwitterValidator extends Validator {
-    constructor(config) {
+    private readonly client: TwitterClient;
+
+    constructor(config: Config) {
         super(config);
-        this._is_twitter_verified = undefined;
         this.client = new TwitterClient({
-            apiKey: this.config.apiKey,
-            apiSecret: this.config.apiKeySecret,
-            accessToken: this.config.accessToken,
-            accessTokenSecret: this.config.accessTokenSecret,
+            apiKey: this.config.twitterValidator.apiKey,
+            apiSecret: this.config.twitterValidator.apiKeySecret,
+            accessToken: this.config.twitterValidator.accessToken,
+            accessTokenSecret: this.config.twitterValidator.accessTokenSecret,
             disableCache: true,
             maxByteSize: 32000000,
             ttl: 360,
         });
     }
 
-    async invoke(info) {
+    async invoke(info: { twitter: string; nonce: string; account: string; _id: string }) {
         const twitterAccount = info.twitter;
-        const token = utils.createJwtToken({ nonce: info.nonce, _id: info._id });
+        const token = createJwtToken({ nonce: info.nonce, _id: info._id });
 
         const link = `${config.baseUrl}/verify-twitter-account?token=${token}`;
         try {
@@ -55,26 +55,26 @@ class TwitterValidator extends Validator {
         }
     }
 
-    async sendCtaMessage(twitterAccount, content, account) {
+    async sendCtaMessage(twitterAccount: string, content: string, account: string) {
         // NOTE:  CTA means call to action
-        let resp = null;
-        resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
-        let userId = null;
-        /// NOTE: at most *one* result
-        if (!_.isEmpty(resp)) {
-            userId = resp[0].id_str;
+        const resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
+
+        if (!resp.length) {
+            throw new Error(`[sendCtaMessage] Twitter user: ${twitterAccount} not found`);
         }
-        const msg = `Verification From Litentry Registrar\n\nThank you for using the Registrar service from Litentry. You have submitted an identity verification on ${CHAIN_NAME} network. And the account connected to this verification is \n\n${account}\n\nIf you have initiated this verification and are the account owner, please click the following button to finish the process. If not, you can safely ignore this message.`;
+
+        const text = `Verification From Litentry Registrar\n\nThank you for using the Registrar service from Litentry. You have submitted an identity verification on ${CHAIN_NAME} network. And the account connected to this verification is \n\n${account}\n\nIf you have initiated this verification and are the account owner, please click the following button to finish the process. If not, you can safely ignore this message.`;
 
         const params = {
             event: {
                 type: 'message_create',
                 message_create: {
                     target: {
-                        recipient_id: userId,
+                        /// NOTE: at most *one* result
+                        recipient_id: resp[0].id_str,
                     },
                     message_data: {
-                        text: msg,
+                        text,
                         ctas: [
                             {
                                 type: 'web_url',
@@ -86,26 +86,30 @@ class TwitterValidator extends Validator {
                 },
             },
         };
-        resp = await this.client.directMessages.eventsNew(params);
-        return resp;
+        const events = await this.client.directMessages.eventsNew(params);
+        return events;
     }
 
-    async sendMessage(twitterAccount, content) {
+    async sendMessage(twitterAccount: string, content: string) {
         // NOTE:  CTA means call to action
-        let resp = null;
-        resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
+        const resp = await this.client.accountsAndUsers.usersLookup({ screen_name: twitterAccount });
+
+        if (!resp.length) {
+            throw new Error(`[sendMessage] Twitter user: ${twitterAccount} not found`);
+        }
+
         let userId = null;
-        /// NOTE: at most *one* result
         if (!_.isEmpty(resp)) {
             userId = resp[0].id_str;
         }
 
-        const params = {
+        const params: EventsNewParams = {
             event: {
                 type: 'message_create',
                 message_create: {
                     target: {
-                        recipient_id: userId,
+                        /// NOTE: at most *one* result
+                        recipient_id: userId!,
                     },
                     message_data: {
                         text: content,
@@ -113,16 +117,17 @@ class TwitterValidator extends Validator {
                 },
             },
         };
-        resp = await this.client.directMessages.eventsNew(params);
-        return resp;
+
+        const events = await this.client.directMessages.eventsNew(params);
+        return events;
     }
 }
 
-const validator = new TwitterValidator(config.twitterValidator);
+const validator = new TwitterValidator(config);
 
 ValidatorEvent.on('handleTwitterVerification', async (info) => {
     logger.debug(`[ValidatorEvent] handle twitter verification: ${JSON.stringify(info)}.`);
     await validator.invoke(info);
 });
 
-module.exports = validator;
+export default validator;

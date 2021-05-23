@@ -1,16 +1,18 @@
-const _ = require('lodash');
-const config = require('app/config').litentry;
-const logger = require('app/logger');
-const Chain = require('app/chain');
-const { RequestJudgementCollection } = require('app/db');
+import _ from 'lodash';
 
+import { RequestJudgementCollection } from 'app/db';
+import Chain, { JudgementType } from 'app/chain';
+import logger from 'app/logger';
+import allConfig from 'app/config';
+
+const config = allConfig.litentry;
 
 /**
  * @description Run `provideJudgement` every `interval`
  */
-async function job () {
+export default async function job() {
     const interval = config.provideJudgementInterval || 120;
-    let promises = [];
+    let promises: Promise<any>[] = [];
     setInterval(async () => {
         if (!_.isEmpty(promises)) {
             return;
@@ -35,7 +37,7 @@ async function job () {
         });
         logger.debug(`Run provideJudgement for ${requests.length} judgement requests.`);
 
-        const judgement = config.defaultJudgement || 'Unknown';
+        const judgement = (config.defaultJudgement as JudgementType) || JudgementType.Unknown;
 
         for (let request of requests) {
             const target = request.account;
@@ -61,8 +63,4 @@ async function job () {
             }
         }
     }, interval * 1000);
-
-
 }
-
-module.exports = job;

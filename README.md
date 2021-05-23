@@ -10,13 +10,11 @@ Litentry Polkadot/Kusama Registrar
 
 - Install `git-crypt`. See [git-crypt](https://github.com/AGWA/git-crypt/blob/master/INSTALL.md) for details, Mac users can simply run `brew install git-crypt`.
 
-- Set the node env: `echo 'NODE_ENV=develpoment' > ./.env`.
+- Set the node env: `echo 'NODE_ENV=development' > ./.env`.
 
 - Create the log directory: `mkdir -p ./log/litentry/registrar`.
 
 - Install packages: `yarn`.
-
-- Enable absolute import paths by running `yarn run link`.
 
 - Before running the app, you need to decrypt the config files. For this you will need the key on your machine, then run: `git-crypt unlock /path/to/key`.
 
