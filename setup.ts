@@ -32,6 +32,7 @@ function sleep(seconds: number): Promise<void> {
     });
 }
 
+let self: any = null;
 class Chain {
     private readonly wsProvider: WsProvider;
 
@@ -51,31 +52,34 @@ class Chain {
      * @constructor
      */
     constructor(config: Config) {
-        this.wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}:${config.chain.port}`);
-        this.keyring = new Keyring({ type: 'sr25519' });
+        self = this;
+        self.wsProvider = new WsProvider(`${config.chain.protocol}://${config.chain.provider}:${config.chain.port}`);
+        self.keyring = new Keyring({ type: 'sr25519' });
     }
 
     async connect() {
-        if (!this.api) {
-            this.api = await ApiPromise.create({
-                provider: this.wsProvider,
+        if (!self.api) {
+            self.api = await ApiPromise.create({
+                provider: self.wsProvider,
                 types: {
                     Address: 'MultiAddress',
                     LookupSource: 'MultiAddress',
+                    // Address: 'AccountId',
+                    // LookupSource: 'AccountId',
                 },
             });
         }
 
-        if (!this.myself) {
-            this.myself = this.keyring.addFromUri('//Alice');
-            this.alice = this.keyring.addFromUri('//Alice');
-            this.bob = this.keyring.addFromUri('//Bob');
-            this.charlie = this.keyring.addFromUri('//Charlie');
-            this.dave = this.keyring.addFromUri('//Dave');
-            this.eve = this.keyring.addFromUri('//Eve');
+        if (!self.myself) {
+            self.myself = self.keyring.addFromUri('//Alice');
+            self.alice = self.keyring.addFromUri('//Alice');
+            self.bob = self.keyring.addFromUri('//Bob');
+            self.charlie = self.keyring.addFromUri('//Charlie');
+            self.dave = self.keyring.addFromUri('//Dave');
+            self.eve = self.keyring.addFromUri('//Eve');
         }
 
-        return this.api;
+        return self.api;
     }
 
     async signAndSend(tx: SubmittableExtrinsic<ApiTypes>, account: AddressOrPair) {
@@ -94,29 +98,29 @@ class Chain {
      * identity
      */
     async identityRegistrars() {
-        await this.connect();
-        const registrars = await this.api.query.identity.registrars();
+        await self.connect();
+        const registrars = await self.api.query.identity.registrars();
         console.log(`[identity.registrars]: ${registrars}`);
         return registrars;
     }
 
     async identityIdentityOf() {
-        await this.connect();
-        const identityOf = await this.api.query.identity.identityOf(this.myself!.address);
+        await self.connect();
+        const identityOf = await self.api.query.identity.identityOf(self.myself!.address);
         console.log(`[identity.identityOf]: ${identityOf.toHuman()}`);
         return identityOf;
     }
 
     async identityAddRegistrar(registrarAccount: string | AccountId | Uint8Array) {
-        await this.connect();
-        const tx = this.api.tx.identity.addRegistrar(registrarAccount);
+        await self.connect();
+        const tx = self.api.tx.identity.addRegistrar(registrarAccount);
         console.log(`[identity.addRegistrar]: ${tx}`);
         return tx;
     }
 
     async identitySetFee(account: AddressOrPair, regIndex = 0, fee = DEFAULT_REGISTRAR_FEE) {
-        const tx = this.api.tx.identity.setFee(regIndex, fee);
-        await this.signAndSend(tx, account);
+        const tx = self.api.tx.identity.setFee(regIndex, fee);
+        await self.signAndSend(tx, account);
         console.log(`[identity.setFee]: ${tx}`);
         return tx;
     }
@@ -125,33 +129,33 @@ class Chain {
      * democracy
      */
     async democracyPublicPropCount() {
-        await this.connect();
-        const publicPropCount = await this.api.query.democracy.publicPropCount();
+        await self.connect();
+        const publicPropCount = await self.api.query.democracy.publicPropCount();
         console.log(`[democracy.publicPropCount]: ${publicPropCount}`);
         return publicPropCount;
     }
 
     async democracyPublicProps() {
-        await this.connect();
-        const publicProps = await this.api.query.democracy.publicProps();
+        await self.connect();
+        const publicProps = await self.api.query.democracy.publicProps();
         console.log(`[democracy.publicProposals]: ${publicProps}`);
         return publicProps;
     }
 
     async democracyReferendumCount() {
-        await this.connect();
-        const referendumCount = await this.api.query.democracy.referendumCount();
+        await self.connect();
+        const referendumCount = await self.api.query.democracy.referendumCount();
         console.log(`[democracy.referendumCount]: ${referendumCount}`);
         return referendumCount;
     }
 
     async democracyReferendumInfoOf() {
-        await this.connect();
-        const referendumCount = await this.democracyReferendumCount();
+        await self.connect();
+        const referendumCount = await self.democracyReferendumCount();
         let referendumInfo = [];
         // TODO_CHECK, I've added .toNumber() here as the ReferendumIndex type wasn't happy being used as a number
         for (let i = 0; i < referendumCount.toNumber(); i++) {
-            const info = await this.api.query.democracy.referendumInfoOf(i);
+            const info = await self.api.query.democracy.referendumInfoOf(i);
             console.log(`[democracy.referendumInfoOf]: ${info}`);
             referendumInfo.push(info);
         }
@@ -161,20 +165,20 @@ class Chain {
     async democracyPropose(
         account: AddressOrPair,
         func: (
-            registrarAccount: string | AccountId | Uint8Array
+            args: any
         ) => Promise<SubmittableExtrinsic<'promise', ISubmittableResult>>,
-        args: string | AccountId | Uint8Array,
+        args: any,
         value = DEFAULT_DEMOCRACY_PROPOSAL_FEE
     ) {
-        await this.connect();
-        // const toAddRegistrar = await self.identityAddRegistrar(registrarAccount);
-        const result = await func(args);
+        await self.connect();
+        // @ts-ignore
+        const result = await func(...args);
         const encodedProposal = result.method.toHex();
         console.log('encodeProposal: ', encodedProposal);
         const preimage = blake2AsHex(encodedProposal);
         console.log('preimage: ', preimage);
-        const tx = this.api.tx.democracy.propose(preimage, value);
-        await this.signAndSend(tx, account);
+        const tx = self.api.tx.democracy.propose(preimage, value);
+        await self.signAndSend(tx, account);
         console.log(`[democracy.propose]: ${tx}`);
         return tx;
     }
@@ -182,24 +186,23 @@ class Chain {
     async democracyNotePreimage(
         account: AddressOrPair,
         func: (
-            registrarAccount: string | AccountId | Uint8Array
+            args: any
         ) => Promise<SubmittableExtrinsic<'promise', ISubmittableResult>>,
-        args: string | AccountId | Uint8Array
+        args: any
     ) {
-        await this.connect();
-        // const toAddRegistrar = await self.identityAddRegistrar();
-        const result = await func(args);
-        // const encodedProposal = toAddRegistrar.method.toHex();
+        await self.connect();
+        // @ts-ignore
+        const result = await func(...args);
         const encodedProposal = result.method.toHex();
-        const tx = this.api.tx.democracy.notePreimage(encodedProposal);
-        await this.signAndSend(tx, account);
+        const tx = self.api.tx.democracy.notePreimage(encodedProposal);
+        await self.signAndSend(tx, account);
         console.log(`[democracy.notePreimage]: ${tx}`);
         return tx;
     }
 
     async democracyVote(account: AddressOrPair, balance = DEFAULT_DEMOCRACY_VOTE_FEE) {
-        await this.connect();
-        const referendumInfo = await this.democracyReferendumInfoOf();
+        await self.connect();
+        const referendumInfo = await self.democracyReferendumInfoOf();
         const vote = {
             Standard: {
                 vote: true,
@@ -210,15 +213,15 @@ class Chain {
             },
         };
         console.log(`vote on referendumInfo: ${referendumInfo[referendumInfo.length - 1]}`);
-        const tx = this.api.tx.democracy.vote(referendumInfo.length - 1, vote);
-        await this.signAndSend(tx, account);
+        const tx = self.api.tx.democracy.vote(referendumInfo.length - 1, vote);
+        await self.signAndSend(tx, account);
         console.log(`[democracy.vote]: ${tx}`);
         return tx;
     }
 
     async proxyProxies(account: string | Uint8Array | AccountId) {
-        await this.connect();
-        const resp = await this.api.query.proxy.proxies(account);
+        await self.connect();
+        const resp = await self.api.query.proxy.proxies(account);
         console.log(`[proxy.proxies]: ${resp}`);
         return resp;
     }
@@ -229,11 +232,11 @@ class Chain {
         proxyType = 'IdentityJudgement',
         delay = 0
     ) {
-        await this.connect();
+        await self.connect();
         // TODO_CHECK 'IdentityJudgement' doesn't match the types allowed in the polkadot library
         // @ts-ignore
-        const tx = this.api.tx.proxy.addProxy(delegateAccount, proxyType, delay);
-        const resp = await this.signAndSend(tx, account);
+        const tx = self.api.tx.proxy.addProxy(delegateAccount, proxyType, delay);
+        const resp = await self.signAndSend(tx, account);
         console.log(`[identity.RequestJudgement] tx: ${tx}`);
         console.log(`[identity.RequestJudgement] resp: ${resp}`);
         return [tx, resp];
@@ -241,7 +244,7 @@ class Chain {
 
     async disconnect() {
         console.log(`Disconnect from chain`);
-        await this.api.disconnect();
+        await self.api.disconnect();
     }
 
     /**
@@ -257,11 +260,12 @@ class Chain {
         };
         console.log(`[setupRegistrar] Try to add registrar: `);
         console.log(registrarAccount.toJson());
-        await this.connect();
+        console.log(account2registrar[`${registrarAccount.address}`]);
+        await self.connect();
         /**
          * check if there is a registrar
          */
-        let registrars = await this.identityRegistrars();
+        let registrars = await self.identityRegistrars();
 
         if (registrars.length > 0) {
             for (let registrar of registrars.toArray()) {
@@ -279,48 +283,46 @@ class Chain {
         /**
          * create a proposal for registrar
          */
-        let publicProps = await this.democracyPublicProps();
+        let publicProps = await self.democracyPublicProps();
         await sleep(DEFAULT_SLEEP_INTERVAL);
         if (`${publicProps.length}` === '0') {
-            // TODO_CHECK this code isn't being hit, and it's throwing build errors (remove the 2 ts-ignores to highlight the issues)
+            // TODO_CHECK self code isn't being hit, and it's throwing build errors (remove the 2 ts-ignores to highlight the issues)
             // @ts-ignore
-            await this.democracyNotePreimage(this.alice, this.identityAddRegistrar, [this.alice, registrarAccount]);
+            await self.democracyNotePreimage(self.alice, self.identityAddRegistrar, [account2registrar[`${registrarAccount.address}`]]);
             await sleep(DEFAULT_SLEEP_INTERVAL);
             // @ts-ignore
-            await this.democracyPropose(this.alice, this.identityAddRegistrar, [this.alice, registrarAccount]);
+            await self.democracyPropose(self.alice, self.identityAddRegistrar, [account2registrar[`${registrarAccount.address}`]]);
             await sleep(DEFAULT_SLEEP_INTERVAL);
         }
-        let referendumInfo = await this.democracyReferendumInfoOf();
+        let referendumInfo = await self.democracyReferendumInfoOf();
         // Make sure there is at least one referendum in array
         while (`${referendumInfo.length}` === '0') {
             await sleep(DEFAULT_SLEEP_INTERVAL);
-            referendumInfo = await this.democracyReferendumInfoOf();
+            referendumInfo = await self.democracyReferendumInfoOf();
         }
         // Extract latest referendum from given array
         let lastReferendumInfo = referendumInfo[referendumInfo.length - 1];
-        // Make sure this referendum is `isOngoing` status
+        // Make sure self referendum is `isOngoing` status
         while (
-            !(lastReferendumInfo.value.toJSON() as {
-                [index: string]: AnyJson;
-            }).isOngoing
+            ! lastReferendumInfo.value.isOngoing
         ) {
             await sleep(DEFAULT_SLEEP_INTERVAL);
-            referendumInfo = await this.democracyReferendumInfoOf();
+            referendumInfo = await self.democracyReferendumInfoOf();
             lastReferendumInfo = referendumInfo[referendumInfo.length - 1];
         }
-        // Now we can safely vote this proposal
-        await this.democracyVote(this.alice);
+        // Now we can safely vote self proposal
+        await self.democracyVote(self.alice);
         await sleep(DEFAULT_SLEEP_INTERVAL);
         /**
          * query the result of registrar
          */
-        registrars = await this.identityRegistrars();
+        registrars = await self.identityRegistrars();
 
         let waiting = true;
         let regIndex = -1;
         while (waiting) {
             await sleep(DEFAULT_SLEEP_INTERVAL);
-            registrars = await this.identityRegistrars();
+            registrars = await self.identityRegistrars();
             console.log(`Number of existed registrars: ${registrars.length}`);
             for (let registrar of registrars) {
                 regIndex += 1;
@@ -329,7 +331,7 @@ class Chain {
                     [index: string]: AnyJson;
                 }).account;
 
-                console.log(`registrar.value: ${account}`, registrar.value);
+                console.log(`registrar.value: ${registrar}`);
                 console.log(`registrarAccount: ${registrarAccount.address}`);
 
                 if (`${account}` === `${account2registrar[registrarAccount.address]}`) {
@@ -343,9 +345,9 @@ class Chain {
          * set registrar fee and query results
          */
         const fee = DEFAULT_REGISTRAR_FEE;
-        await this.identitySetFee(registrarAccount, regIndex, fee);
+        await self.identitySetFee(registrarAccount, regIndex, fee);
         await sleep(DEFAULT_SLEEP_INTERVAL);
-        await this.identityRegistrars();
+        await self.identityRegistrars();
     }
 }
 
