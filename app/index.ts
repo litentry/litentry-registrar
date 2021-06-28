@@ -10,7 +10,7 @@ if (result.error) {
 
 import colors from 'colors/safe';
 import cluster from 'cluster';
-import express from 'express';
+import express, {RequestHandler} from 'express';
 
 import Chain from 'app/chain';
 import logger from 'app/logger';
@@ -65,11 +65,11 @@ if (cluster.isMaster) {
 } else if (cluster.worker.process.env.type === 'web_server_process') {
     const app = express();
 
-    app.use(express.json());
+    app.use(express.json() as RequestHandler);
     app.use(
         express.urlencoded({
             extended: true,
-        })
+        }) as RequestHandler
     );
 
     app.use('/', (req, res, next) => {
