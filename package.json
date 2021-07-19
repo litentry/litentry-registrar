@@ -10,9 +10,9 @@
         "setup:built": "NODE_PATH=./dist node dist/setup.js",
         "test": "NODE_PATH=./ ts-node tests/ci.inspect.ts && jest --testPathIgnorePatterns  \".*\\.js$\"",
         "test:built": "NODE_PATH=./dist node dist/tests/ci.inspect.js && jest --testPathIgnorePatterns  \".*\\.ts$\"",
-        "app": "NODE_PATH=./ nodemon --ignore tests --ext ts,js --exec 'ts-node app/index.ts'",
         "lint": "./node_modules/.bin/eslint --fix app",
-        "start": "NODE_PATH=./dist pm2 start dist/app --restart-delay=2000"
+        "start": "NODE_PATH=./dist pm2 start dist/app --restart-delay=2000",
+        "start:dev": "NODE_PATH=./ nodemon --ignore tests --ext ts,js --exec 'ts-node app/index.ts'"
     },
     "engines": {
         "node": ">=14.15.0",
@@ -29,8 +29,8 @@
     },
     "homepage": "https://github.com/litentry/litentry-registrar#readme",
     "dependencies": {
-        "@polkadot/api": "5.0.1",
-        "@polkadot/types": "5.0.1",
+        "@polkadot/api": "5.1.1",
+        "@polkadot/types": "5.1.1",
         "@sendgrid/mail": "^7.3.0",
         "axios": "^0.21.0",
         "chalk": "^4.1.0",
