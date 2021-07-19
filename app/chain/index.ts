@@ -133,7 +133,6 @@ class Chain {
 
                 if (event.section === 'identity' && event.method === 'JudgementRequested') {
                     logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-                    logger.info(`\t\t${event.meta.documentation.toString()}`);
 
                     // Loop through each of the parameters, displaying the type and data
                     event.data.forEach((data, index) => {
@@ -152,8 +151,6 @@ class Chain {
                 // NOTE: Identity.JugementUnrequested
                 if (event.section === 'identity' && event.method === 'JudgementUnrequested') {
                     logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-                    logger.info(`\t\t${event.meta.documentation.toString()}`);
-
                     // Loop through each of the parameters, displaying the type and data
                     event.data.forEach((data, index) => {
                         logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
@@ -168,8 +165,6 @@ class Chain {
                 // NOTE: Identity.IdentityCleared
                 if (event.section === 'identity' && event.method === 'IdentityCleared') {
                     logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-                    logger.info(`\t\t${event.meta.documentation.toString()}`);
-
                     // Loop through each of the parameters, displaying the type and data
                     event.data.forEach((data, index) => {
                         logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
