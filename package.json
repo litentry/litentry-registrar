@@ -29,8 +29,8 @@
     },
     "homepage": "https://github.com/litentry/litentry-registrar#readme",
     "dependencies": {
-        "@polkadot/api": "5.3.1",
-        "@polkadot/types": "5.3.1",
+        "@polkadot/api": "5.3.2",
+        "@polkadot/types": "5.3.2",
         "@sendgrid/mail": "^7.3.0",
         "axios": "^0.21.0",
         "chalk": "^4.1.0",
