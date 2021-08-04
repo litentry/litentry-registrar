@@ -11,7 +11,7 @@
         "test": "NODE_PATH=./ ts-node tests/ci.inspect.ts && jest --testPathIgnorePatterns  \".*\\.js$\"",
         "test:built": "NODE_PATH=./dist node dist/tests/ci.inspect.js && jest --testPathIgnorePatterns  \".*\\.ts$\"",
         "lint": "./node_modules/.bin/eslint --fix app",
-        "start": "NODE_PATH=./dist pm2 start dist/app --restart-delay=2000",
+        "start": "NODE_PATH=./dist pm2 start dist/app --restart-delay=2000 --name kusama-registrar",
         "start:dev": "NODE_PATH=./ nodemon --ignore tests --ext ts,js --exec 'ts-node app/index.ts'"
     },
     "engines": {
