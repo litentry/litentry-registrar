@@ -33,7 +33,7 @@
         "@polkadot/types": "5.3.2",
         "@sendgrid/mail": "^7.3.0",
         "axios": "^0.21.0",
-        "chalk": "^4.1.0",
+        "chalk": "^4.1.2",
         "dotenv": "^8.2.0",
         "express": "^4.17.1",
         "hogan.js": "^3.0.2",
