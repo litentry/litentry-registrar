@@ -53,7 +53,7 @@
         "@types/hogan.js": "^3.0.0",
         "@types/jest": "^26.0.23",
         "@types/jsonwebtoken": "^8.5.1",
-        "@types/lodash": "^4.14.169",
+        "@types/lodash": "^4.14.172",
         "@types/lru-cache": "^5.1.0",
         "@types/matrix-js-sdk": "^9.2.5",
         "@types/mongodb": "^3.6.14",
