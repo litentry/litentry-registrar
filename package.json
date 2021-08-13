@@ -55,7 +55,7 @@
         "@types/jsonwebtoken": "^8.5.4",
         "@types/lodash": "^4.14.172",
         "@types/lru-cache": "^5.1.1",
-        "@types/matrix-js-sdk": "^9.2.5",
+        "@types/matrix-js-sdk": "^11.0.1",
         "@types/mongodb": "3.6.10",
         "chai": "^4.3.0",
         "eslint": "^7.32.0",
