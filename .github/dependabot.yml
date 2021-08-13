@@ -13,3 +13,6 @@ updates:
     allow:
     # check only direct dependencies
       - dependency-type: "direct"
+    ignore:
+      - dependency-name: "mongodb"
+      - dependency-name: "@types/mongodb"
