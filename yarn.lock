@@ -727,6 +727,16 @@
     "@polkadot/util-crypto" "^7.1.1"
     rxjs "^7.2.0"
 
+"@polkadot/types@5.4.1":
+  version "5.4.1"
+  resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-5.4.1.tgz#2c048d781bdce3e45737cdabaf0a8cbd05e54434"
+  integrity sha512-cc6bMBsIffl9aKghWyGoBDLXKOVRWx6AEMY+tm5xvjLJ0UCs0qVg1U2fsy1POH28o+HNP0hlJpqqHmF6k5Suvg==
+  dependencies:
+    "@babel/runtime" "^7.14.8"
+    "@polkadot/util" "^7.1.1"
+    "@polkadot/util-crypto" "^7.1.1"
+    rxjs "^7.2.0"
+
 "@polkadot/util-crypto@7.1.2", "@polkadot/util-crypto@^7.1.1":
   version "7.1.2"
   resolved "https://registry.yarnpkg.com/@polkadot/util-crypto/-/util-crypto-7.1.2.tgz#1f042235d345a499baca22f54d4758125afabba6"
