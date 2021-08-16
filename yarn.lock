@@ -717,16 +717,6 @@
     "@polkadot/types" "5.4.1"
     "@polkadot/util" "^7.1.1"
 
-"@polkadot/types@5.3.2":
-  version "5.3.2"
-  resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-5.3.2.tgz#6b5849172c1280bab24865a6e09c75a941690b6d"
-  integrity sha512-wwFf6XUR7BR5pJwE4cinpNMVRLHpjBhdpwf4vc4DQ19xPWN/QgOHeTdC07UhC7WUzoRyb5xuib7SB46MCMeIvw==
-  dependencies:
-    "@babel/runtime" "^7.14.8"
-    "@polkadot/util" "^7.1.1"
-    "@polkadot/util-crypto" "^7.1.1"
-    rxjs "^7.2.0"
-
 "@polkadot/types@5.4.1":
   version "5.4.1"
   resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-5.4.1.tgz#2c048d781bdce3e45737cdabaf0a8cbd05e54434"
@@ -4581,10 +4571,10 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
-matrix-js-sdk@^12.2.0:
-  version "12.2.0"
-  resolved "https://registry.yarnpkg.com/matrix-js-sdk/-/matrix-js-sdk-12.2.0.tgz#e1dc7ddac054289cb24ee3d11dba8a5ba5ddecf5"
-  integrity sha512-foSs3uKRc6uvFNhgY35eErBvLWVDd5RNIxxsdFKlmU3B+70YUf3BP3petyBNW34ORyOqNdX36IiApfLo3npNEw==
+matrix-js-sdk@^12.3.0:
+  version "12.3.0"
+  resolved "https://registry.yarnpkg.com/matrix-js-sdk/-/matrix-js-sdk-12.3.0.tgz#b4de14e9c26257e3137eb020b6b13678b01e37d7"
+  integrity sha512-ywdlpVnwTiddLCvh/sKaZ0/0CVTqqbKPsfpsKduH9GWzwXA/Jrkwt//ryU8l9MjJTrjLnwxTYgnjZgeEp4h5kQ==
   dependencies:
     "@babel/runtime" "^7.12.5"
     another-json "^0.2.0"
