@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { createClient, MatrixClient, Room } from 'matrix-js-sdk';
+import { Preset } from 'matrix-js-sdk/lib/@types/partials';
 import config from 'app/config';
 import logger from 'app/logger';
 import Validator from './base';
@@ -34,7 +35,7 @@ class ElementValidator extends Validator {
             /// NOTE: Do nothing, but listening for incoming messages. Do not remove !
             /// Capture user input events
             this.client.on('Room.timeline', async function (/* event, room, toStartOfTimeline, removed, data */) {});
-            await this.client.startClient();
+            await this.client.startClient({});
         }
 
         const results = await RiotCollection.query({ riot: riotAccount });
@@ -128,7 +129,7 @@ class ElementValidator extends Validator {
     async createRoom(riotAccount: string) {
         logger.debug(`Create a new room for riot user: ${riotAccount}`);
         const { room_id } = await this.client.createRoom({
-            preset: 'trusted_private_chat',
+            preset: Preset.TrustedPrivateChat,
             invite: [riotAccount],
             is_direct: true,
         });

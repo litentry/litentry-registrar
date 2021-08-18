@@ -18,7 +18,6 @@
       "strictPropertyInitialization": false,
       "target": "es6"
   },
-  "exclude": ["node_modules/matrix-js-sdk/lib/*.d.ts"],
   "include": [
     "setup.ts",
     "app/**/*.ts",
