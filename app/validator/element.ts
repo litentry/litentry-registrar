@@ -34,7 +34,7 @@ class ElementValidator extends Validator {
             /// NOTE: Do nothing, but listening for incoming messages. Do not remove !
             /// Capture user input events
             this.client.on('Room.timeline', async function (/* event, room, toStartOfTimeline, removed, data */) {});
-            await this.client.startClient();
+            await this.client.startClient({});
         }
 
         const results = await RiotCollection.query({ riot: riotAccount });

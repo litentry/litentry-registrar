@@ -34,9 +34,9 @@ jobs:
           $GIT_CRYPT_CMD unlock $GIT_CRYPT_KEY
           echo NODE_ENV=$NODE_ENV > $TARGET_DIR/.env
           yarn
-          yarn run build
+          yarn build
           [[ $(pm2 list kusama-registrar | grep online | wc -l) -ne 0 ]] && pm2 stop kusama-registrar
           yarn start &> /dev/null
           sleep 5
-          yarn run setup
+          yarn setup
           yarn test
