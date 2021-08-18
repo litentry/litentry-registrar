@@ -9,7 +9,9 @@
       "noImplicitAny": true,
       "outDir": "dist",
       "paths": {
-          "matrix-js-sdk": ["node_modules/@types/matrix-js-sdk/index.d.ts"],
+          "matrix-js-sdk": [
+	          "node_modules/@types/matrix-js-sdk/index.d.ts"
+	      ],
           "app/*": ["app/*"],
           "tests/*": ["tests/*"]
       },
@@ -18,6 +20,7 @@
       "strictPropertyInitialization": false,
       "target": "es6"
   },
+  "exclude": ["node_modules/matrix-js-sdk/lib/*.d.ts"],
   "include": [
     "setup.ts",
     "app/**/*.ts",
