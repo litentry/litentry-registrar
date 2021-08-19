@@ -9,7 +9,7 @@ updates:
       - "chenzongxiong"
     # Check for updates every day (weekdays)
     schedule:
-      interval: "daily"
+      interval: "weekly"
     # Raise pull requests for version updates against the `develop` branch
     target-branch: "master"
     allow:
