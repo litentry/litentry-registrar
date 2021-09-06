@@ -4110,10 +4110,10 @@ makeerror@1.0.x:
   dependencies:
     tmpl "1.0.x"
 
-matrix-js-sdk@^12.3.1:
-  version "12.3.1"
-  resolved "https://registry.yarnpkg.com/matrix-js-sdk/-/matrix-js-sdk-12.3.1.tgz#efa9172e96722afb03cb0e866b047022a7c6cb17"
-  integrity sha512-ysF6FQIjz8NaQHpXRs0VD1uh5kNi4tZh7NNPq54nS9YoDC7F681n2srFhoQn4M/Bv5tBLWWGNjKufXTLHp5j5g==
+matrix-js-sdk@^12.4.0:
+  version "12.4.0"
+  resolved "https://registry.yarnpkg.com/matrix-js-sdk/-/matrix-js-sdk-12.4.0.tgz#ff60306f9a9e39fd1ae6c7e501001f80eb779dd7"
+  integrity sha512-KamHmvNle4mkdErmNgVsGIL3n8/zgPe60DLVaEA2t4aSNwQLEmRS+oVpIgsO3ZrUivBvn4oc9sBqxP0OIl6kUg==
   dependencies:
     "@babel/runtime" "^7.12.5"
     another-json "^0.2.0"
