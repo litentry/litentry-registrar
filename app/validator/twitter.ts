@@ -37,6 +37,7 @@ class TwitterValidator extends Validator {
 
             await RequestJudgementCollection.setTwitterVerifiedPendingById(info._id);
         } catch (error) {
+            // @ts-ignore
             const errorData = JSON.parse(error.data);
             /* eslint-disable-next-line */
             if (errorData.hasOwnProperty('errors')) {
