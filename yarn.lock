@@ -731,10 +731,10 @@
     "@polkadot/util-crypto" "^7.2.1"
     rxjs "^7.3.0"
 
-"@polkadot/types@5.8.2":
-  version "5.8.2"
-  resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-5.8.2.tgz#cd0a5c2829d1db83440166e573f8334871312b58"
-  integrity sha512-srFAr2q8HQ9BDnW3K4522UUyAJiWUX1k/WLW47lWm/Ticrr2d8HZTysUkU85r6hOIOALIy9e2mvSTXVtIZBzqw==
+"@polkadot/types@5.8.3":
+  version "5.8.3"
+  resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-5.8.3.tgz#9f37fe9a2dc30491bae671ba4e31e6d1a3c626ed"
+  integrity sha512-iSVCk7Ja8WjLOpjPtZRo9Gaz9AS/b722LH3wWo91TSMT11Vz/lYCWlagNc1nVez6sRsJoEXjD7pKA0ga0t78Lw==
   dependencies:
     "@babel/runtime" "^7.15.4"
     "@polkadot/util" "^7.3.1"
