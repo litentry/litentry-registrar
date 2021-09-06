@@ -703,16 +703,6 @@
     "@polkadot/types" "5.6.1"
     "@polkadot/util" "^7.2.1"
 
-"@polkadot/types@5.5.2":
-  version "5.5.2"
-  resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-5.5.2.tgz#ff281c49717b79485abf378c700674c513dd034a"
-  integrity sha512-SkH27Sca2LIfb8bR2Gz5u2FHeVJl2Md7rcJq7rl319ZV3+pM2wFXu6TVRxLYjPyLM3VtMpaI0nETnCIDYSbeqQ==
-  dependencies:
-    "@babel/runtime" "^7.15.3"
-    "@polkadot/util" "^7.2.1"
-    "@polkadot/util-crypto" "^7.2.1"
-    rxjs "^7.3.0"
-
 "@polkadot/types@5.6.1":
   version "5.6.1"
   resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-5.6.1.tgz#008f858a90d5d4b42cd0e6d126c32c246a7c1c76"
@@ -4120,10 +4110,10 @@ makeerror@1.0.x:
   dependencies:
     tmpl "1.0.x"
 
-matrix-js-sdk@^12.3.1:
-  version "12.3.1"
-  resolved "https://registry.yarnpkg.com/matrix-js-sdk/-/matrix-js-sdk-12.3.1.tgz#efa9172e96722afb03cb0e866b047022a7c6cb17"
-  integrity sha512-ysF6FQIjz8NaQHpXRs0VD1uh5kNi4tZh7NNPq54nS9YoDC7F681n2srFhoQn4M/Bv5tBLWWGNjKufXTLHp5j5g==
+matrix-js-sdk@^12.4.0:
+  version "12.4.0"
+  resolved "https://registry.yarnpkg.com/matrix-js-sdk/-/matrix-js-sdk-12.4.0.tgz#ff60306f9a9e39fd1ae6c7e501001f80eb779dd7"
+  integrity sha512-KamHmvNle4mkdErmNgVsGIL3n8/zgPe60DLVaEA2t4aSNwQLEmRS+oVpIgsO3ZrUivBvn4oc9sBqxP0OIl6kUg==
   dependencies:
     "@babel/runtime" "^7.12.5"
     another-json "^0.2.0"
@@ -4242,10 +4232,10 @@ mkdirp@1.0.4:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
 
-mocha@^9.1.0:
-  version "9.1.0"
-  resolved "https://registry.yarnpkg.com/mocha/-/mocha-9.1.0.tgz#0a7aa6fc4f59d1015d4e11747d9104b752553c67"
-  integrity sha512-Kjg/XxYOFFUi0h/FwMOeb6RoroiZ+P1yOfya6NK7h3dNhahrJx1r2XIT3ge4ZQvJM86mdjNA+W5phqRQh7DwCg==
+mocha@^9.1.1:
+  version "9.1.1"
+  resolved "https://registry.yarnpkg.com/mocha/-/mocha-9.1.1.tgz#33df2eb9c6262434630510c5f4283b36efda9b61"
+  integrity sha512-0wE74YMgOkCgBUj8VyIDwmLUjTsS13WV1Pg7l0SHea2qzZzlq7MDnfbPsHKcELBRk3+izEVkRofjmClpycudCA==
   dependencies:
     "@ungap/promise-all-settled" "1.1.2"
     ansi-colors "4.1.1"
