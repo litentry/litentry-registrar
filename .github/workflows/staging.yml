@@ -17,6 +17,9 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   deploy:
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
     env:
       GIT_CRYPT_CMD: /usr/local/bin/git-crypt
       NODE_ENV: staging
