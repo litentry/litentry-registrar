@@ -32,7 +32,6 @@
         "@polkadot/api": "6.4.2",
         "@polkadot/types": "6.4.2",
         "@sendgrid/mail": "^7.5.0",
-        "@sendgrid/mail": "^7.4.7",
         "axios": "^0.23.0",
         "chalk": "^4.1.2",
         "dotenv": "^10.0.0",
