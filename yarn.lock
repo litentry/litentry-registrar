@@ -706,16 +706,6 @@
     "@polkadot/types" "6.4.2"
     "@polkadot/util" "^7.5.1"
 
-"@polkadot/types@6.1.1":
-  version "6.1.1"
-  resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-6.1.1.tgz#72afeffe503bef0bca450789d4b90a7a4b19bec9"
-  integrity sha512-FaHxlLHlVrwth1DNVeANpLyYwH+3GqrZwumZFjuBalbKtYcoLuqyvr0nMG7vDKmrK77q0kf9n3Hxdh2HAm609w==
-  dependencies:
-    "@babel/runtime" "^7.15.4"
-    "@polkadot/util" "^7.4.1"
-    "@polkadot/util-crypto" "^7.4.1"
-    rxjs "^7.3.0"
-
 "@polkadot/types@6.4.2":
   version "6.4.2"
   resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-6.4.2.tgz#8df8caeceb17e9ad50094ee7a3af5f248519d4ad"
@@ -726,7 +716,7 @@
     "@polkadot/util-crypto" "^7.5.1"
     rxjs "^7.4.0"
 
-"@polkadot/util-crypto@7.5.1", "@polkadot/util-crypto@^7.4.1", "@polkadot/util-crypto@^7.5.1":
+"@polkadot/util-crypto@7.5.1", "@polkadot/util-crypto@^7.5.1":
   version "7.5.1"
   resolved "https://registry.yarnpkg.com/@polkadot/util-crypto/-/util-crypto-7.5.1.tgz#ff095262504a9f2829a41ff6b98ec3a537feb4ef"
   integrity sha512-jghGTTMrGllf/TIKpWsphfXRfl0dzkn1/3PsiaFCKVLnZTmxeMv9FGH2Z6/L1XYeFheoBYmFIlKDNir45mZeiw==
@@ -749,7 +739,7 @@
     tweetnacl "^1.0.3"
     xxhashjs "^0.2.2"
 
-"@polkadot/util@7.5.1", "@polkadot/util@^7.4.1", "@polkadot/util@^7.5.1":
+"@polkadot/util@7.5.1", "@polkadot/util@^7.5.1":
   version "7.5.1"
   resolved "https://registry.yarnpkg.com/@polkadot/util/-/util-7.5.1.tgz#aa5db65bb543173afe9db6749475b40908d98b76"
   integrity sha512-6ltZyYZg/eUnyB5IBIcFpFFfhDL/ZW57Nt8CVcZmKqiKTL1kF60HmIvWky/agEV7fa00Ibd/zpANoQitEqNE0Q==
@@ -1331,6 +1321,13 @@ aws4@^1.8.0:
   version "1.11.0"
   resolved "https://registry.yarnpkg.com/aws4/-/aws4-1.11.0.tgz#d61f46d83b2519250e2784daf5b09479a8b41c59"
   integrity sha512-xh1Rl34h6Fi1DC2WWKfxUTVqRsNnr6LsKz2+hfwDxQJWmrx8+c7ylaqBMcHfl1U1r2dsifOvKX3LQuLNZ+XSvA==
+
+axios@^0.21.0, axios@^0.21.4:
+  version "0.21.4"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-0.21.4.tgz#c67b90dc0568e5c1cf2b0b858c43ba28e2eda575"
+  integrity sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==
+  dependencies:
+    follow-redirects "^1.14.0"
 
 axios@^0.22.0:
   version "0.22.0"
@@ -5129,7 +5126,7 @@ run-series@^1.1.8:
   resolved "https://registry.yarnpkg.com/run-series/-/run-series-1.1.9.tgz#15ba9cb90e6a6c054e67c98e1dc063df0ecc113a"
   integrity sha512-Arc4hUN896vjkqCYrUXquBFtRZdv1PfLbTYP71efP6butxyQ0kWpiNJyAgsxscmQg1cqvHY32/UCBzXedTpU2g==
 
-rxjs@^7.3.0, rxjs@^7.4.0:
+rxjs@^7.4.0:
   version "7.4.0"
   resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-7.4.0.tgz#a12a44d7eebf016f5ff2441b87f28c9a51cebc68"
   integrity sha512-7SQDi7xeTMCJpqViXh8gL/lebcwlp3d831F05+9B44A4B0WfsEwUQHR64gsH1kvJ+Ep/J9K2+n1hVl1CsGN23w==
