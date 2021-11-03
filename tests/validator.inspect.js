@@ -35,7 +35,7 @@ describe('Validators', function () {
         const insertedId = await RequestJudgementCollection.insert(normalizedInfo);
         normalizedInfo['_id'] = insertedId;
         ValidatorEvent.emit('handleEmailVerification', normalizedInfo);
-        ValidatorEvent.emit('handleTwitterVerification', normalizedInfo);
+        // ValidatorEvent.emit('handleTwitterVerification', normalizedInfo);
         ValidatorEvent.emit('handleRiotVerification', normalizedInfo);
 
         await utils.sleep(TIMEOUT);
@@ -43,7 +43,7 @@ describe('Validators', function () {
         const [queriedObject] = await RequestJudgementCollection.query({ _id: insertedId });
 
         assert.strictEqual(queriedObject.emailStatus, 'pending');
-        assert.strictEqual(queriedObject.twitterStatus, 'pending');
+        // assert.strictEqual(queriedObject.twitterStatus, 'pending');
         assert.strictEqual(queriedObject.riotStatus, 'pending');
     });
 });
