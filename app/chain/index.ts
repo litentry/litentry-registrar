@@ -295,79 +295,36 @@ class Chain {
         });
     }
 
-    // async processBlock(blockHash: string) {
-    //     const records = await this.api.query.system.events.at(blockHash);
-
-    //     for (let record of records) {
-    //         const { event } = record;
-    //         const types = event.typeDef;
-
-    //         const params: {[key: string]: string} = {};
-    //         event.data.forEach((data, index) => {
-    //             params[types[index].type] = data.toString();
-    //         });
-
-    //         if (`${event.section}.${event.method}` === 'identity.JudgementRequested') {
-    //             // NOTE: We only need to emit `handleRequestJudgement` event on our own registrar.
-    //             if (params['RegistrarIndex'] === this.config.litentry.regIndex.toString()) {
-    //                 console.log('Handle request judgement.....');
-    //                 // Event.emit('handleRequestJudgement', params['AccountId']);
-    //             } else {
-    //                 logger.debug(
-    //                     `Bypass request judgement to registrar #${params['RegistrarIndex']}, we aren't interested in it`
-    //                 );
-    //             }
-    //             console.log('types: ')
-    //             console.log(types);
-    //             console.log('params: ');
-    //             console.log(params);
-    //         }
-    //         if (`${event.section}.${event.method}` === 'identity.JudgementUnrequested') {
-    //             if (params['RegistrarIndex'] === this.config.litentry.regIndex.toString()) {
-    //                 Event.emit('handleUnRequestJudgement', params['AccountId']);
-    //             }
-    //         }
-    //         if (`${event.section}.${event.method}` === 'identity.IdentityCleared') {
-    //             // We only need to emit `handleRequestJudgement` event on our own registrar.
-    //             Event.emit('handleUnRequestJudgement', params['AccountId']);
-    //         }
-
-    //     }
-    //     console.log('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
-    // }
     async processAtBlockHeight(blockHeight: number) {
         const blockHash = await this.api.rpc.chain.getBlockHash(blockHeight);
-        // console.log('blockHash');
-        // console.log(`${blockHash}`);
-        // console.log('0xc236f141499f595f8d12e25d6ecdb9d731031a3d3f8fdd6b0d91c3ace1d98878');
         const block = await this.api.rpc.chain.getBlock(blockHash);
         const { extrinsics } = block.block;
         for (let extrinsic of extrinsics) {
             const { isSigned, meta, method: { args, method, section } } = extrinsic;
-            // console.log(`${extrinsic.method}`);
-            // console.log(`${extrinsic.method.args}`);
-            // console.log(extrinsic);
-            // console.log(`${extrinsic.method.method}`);
-            // console.log(`${section}`);
-            // console.log(`${method}`);
-            if (`${section}.${method}` === 'identity.requestJudgement') {
-                console.log('find interested extrinsic');
-                // console.log(`${meta.args[0]}`);
-                // for (let arg of args) {
-                    // console.log(`${arg}`);
-                    // console.log(arg);
-                // }
-                console.log(`${meta}`);
-                for (let [name, arg] of _.zip(meta.args, args)) {
-                    // console.log(`${arg}`);
-                    // console.log(`name: ${arg.name}`);
-                    console.log(`name: ${name?.name}, arg: ${arg}`);
-                }
 
+            const params: {[key: string]: string} = {};
+
+            if (`${section}.${method}` === 'identity.requestJudgement') {
+                for (let [field, arg] of _.zip(meta.fields, args)) {
+                    // @ts-ignore
+                    params[`${field?.name}`] = `${arg}`;
+                }
+                if (isSigned) {
+                    params['signer'] = extrinsic.signer.toString();
+                }
+                // NOTE: Cannot deal with proxy extrinsics
+                logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
+                if (params['reg_index'] === this.config.litentry.regIndex.toString()) {
+                    Event.emit('handleRequestJudgement', params['signer']);
+                }
             }
-            // if (`${section}.${method}` === 'identity.clearIdentity') {
-            // }
             // if (`${section}.${method}` === 'identity.cancelRequest') {
+            // }
+            // if (`${section}.${method}` === 'identity.clearIdentity') {
+            //     for (let [field, arg] of _.zip(meta.fields, args)) {
+            //         // @ts-ignore
+            //         params[`${field?.name}`] = arg;
+            //     }
             // }
             console.log('--------------------------------------------------------------------------------');
         }
