@@ -41,7 +41,7 @@ class MongodbStorage {
         } else {
             endpoint = `mongodb://${this.config.host}:${this.config.port}`;
         }
-        this.client = new MongoClient(endpoint);
+        this.client = new MongoClient(endpoint, {useUnifiedTopology: true});
 
         if (!this.client.isConnected()) {
             await this.client.connect();
