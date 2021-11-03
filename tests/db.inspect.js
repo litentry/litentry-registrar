@@ -1,6 +1,6 @@
 require('dotenv').config({ debug: true });
 
-const { RequestJudgementCollection, RiotCollection } = require('app/db');
+const { RequestJudgementCollection, RiotCollection, BlockCollection } = require('app/db');
 const assert = require('chai').assert;
 
 describe(`RequestJudgement Test`, function () {
@@ -151,5 +151,30 @@ describe(`RequestJudgement Test`, function () {
         const [updatedQueriedObject] = await RiotCollection.query({ riot: riotAccount });
         assert.strictEqual(updatedQueriedObject.roomId, 'updated-room-id');
         assert.strictEqual(upsertedId, updatedQueriedObject._id.toString());
+    });
+});
+describe('BlockCollection Test', function() {
+    beforeEach(async function () {
+        await BlockCollection.reset();
+    });
+
+    afterEach(async function () {
+        await BlockCollection.reset();
+    });
+
+    it('Get next block - undefined', async function () {
+        const blockHeight = await BlockCollection.getNextBlockHeight();
+        assert.isUndefined(blockHeight);
+    });
+
+    it('Get next block - defined', async function () {
+        const processedBlockHeight = 10;
+        await BlockCollection.setProcessedBlockHeight(processedBlockHeight);
+        let blockHeight = await BlockCollection.getNextBlockHeight();
+        assert.strictEqual(blockHeight, 11);
+        await BlockCollection.setProcessedBlockHeight(blockHeight + 2);
+
+        blockHeight = await BlockCollection.getNextBlockHeight();
+        assert.strictEqual(blockHeight, 14);
     });
 });
