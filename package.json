@@ -9,7 +9,7 @@
         "setup": "NODE_PATH=./ ts-node setup.ts",
         "setup:built": "NODE_PATH=./dist node dist/setup.js",
         "ci": "NODE_PATH=./ ts-node tests/ci.inspect.ts",
-        "lint": "./node_modules/.bin/eslint --fix app",
+        "lint": "NODE_PATH=./ ./node_modules/.bin/eslint --fix app/**/*.ts",
         "start": "NODE_PATH=./dist pm2 start dist/app --restart-delay=2000 --name kusama-registrar",
         "start:dev": "NODE_PATH=./ nodemon --ignore tests --ext ts,js --exec 'ts-node app/index.ts'"
     },

@@ -42,4 +42,4 @@ jobs:
           yarn start &> /dev/null
           sleep 5
           yarn setup
-          yarn test
+          yarn test && yarn ci
