@@ -1,5 +1,7 @@
 import logger from 'app/logger';
-import { throttle } from './utils';
+import { throttle } from 'app/utils';
+// const logger = require('app/logger');
+// const { throttle } = require('app/utils');
 
 // https://jestjs.io/docs/timer-mocks
 jest.useFakeTimers();
@@ -13,15 +15,26 @@ const mockPromise = (a?: string, b?: string): Promise<string[]> =>
         res(data);
     });
 
+// const mockPromise = (a, b) => {
+//     return new Promise((res) => {
+//         const data = [];
+//         if (a) data.push(a);
+//         if (b) data.push(b);
+//         res(data);
+//     });
+// }
+
 describe('throttle()', () => {
     it("won't fire during the waiting time", async () => {
         const func = throttle('abc', mockPromise);
         await func();
         await func();
+
         jest.runAllTimers();
         expect(logger.debug as jest.Mock).toHaveBeenCalledWith(
             '[throttle] mockPromise is throttled, cannot be invoked at this moment.'
         );
+
     });
 
     it('will fire after the waiting time', async () => {
