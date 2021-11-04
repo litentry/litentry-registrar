@@ -4,7 +4,7 @@ import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
-import { RequestJudgementCollection } from 'app/db';
+import { RequestJudgementCollection, BlockCollection } from 'app/db';
 import logger from 'app/logger';
 import config from 'app/config';
 import { ValidatorEvent } from 'app/validator/events';
@@ -116,81 +116,26 @@ class Chain {
         }
 
         await this.connect();
-
-        const unsubHeads = await this.api.rpc.chain.subscribeNewHeads(async (lastHeader: any) => {
-            // console.log(`${chain}: last block #${lastHeader.number} has hash ${lastHeader.hash}`);
-            // const blockHash = lastHeader.hash;
-            // const blockHash = '0xc236f141499f595f8d12e25d6ecdb9d731031a3d3f8fdd6b0d91c3ace1d98878';
-            // await this.processBlock(blockHash);
-            await this.processAtBlockHeight(9771001);
-        });
-
-        // logger.debug('[EventListenerStart] Starting event listener...');
-        // this.unsubscribeEventListener = await this.api.query.system.events((events) => {
-
-        //   console.log(events[0].event);
-        //   console.log(events[0].phase);
-
-        //   // const lastHeader = await this.api.rpc.chain.getHeader();
-        //   // // console.log(lastHeader);
-        //   // // Log the information
-        //   // console.log(`${chain}: last block #${lastHeader.number} has hash ${lastHeader.hash}`);
-        //     // Loop through the Vec<EventRecord>
-        //     events.forEach((record) => {
-        //         // Extract the phase, event and the event types
-        //         const { event, phase } = record;
-        //         const types = event.typeDef;
-        //         logger.debug(`Received event from chain: [${event.section}.${event.method}]`);
-
-        //         // Show what we are busy with
-        //         const params: {
-        //             [key: string]: string;
-        //         } = {};
-
-        //         if (event.section === 'identity' && event.method === 'JudgementRequested') {
-        //             logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-
-        //             // Loop through each of the parameters, displaying the type and data
-        //             event.data.forEach((data, index) => {
-        //                 logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
-        //                 params[types[index].type] = data.toString();
-        //             });
-        //             // We only need to emit `handleRequestJudgement` event on our own registrar.
-        //             if (params['RegistrarIndex'] === this.config.litentry.regIndex.toString()) {
-        //                 Event.emit('handleRequestJudgement', params['AccountId']);
-        //             } else {
-        //                 logger.debug(
-        //                     `Bypass request judgement to registrar #${params['RegistrarIndex']}, we aren't interested in it`
-        //                 );
-        //             }
-        //         }
-        //         // NOTE: Identity.JugementUnrequested
-        //         if (event.section === 'identity' && event.method === 'JudgementUnrequested') {
-        //             logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-        //             // Loop through each of the parameters, displaying the type and data
-        //             event.data.forEach((data, index) => {
-        //                 logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
-        //                 params[types[index].type] = data.toString();
-        //             });
-        //             // We only need to emit `handleRequestJudgement` event on our own registrar.
-        //             if (params['RegistrarIndex'] === this.config.litentry.regIndex.toString()) {
-        //                 Event.emit('handleUnRequestJudgement', params['AccountId']);
-        //             }
-        //         }
-
-        //         // NOTE: Identity.IdentityCleared
-        //         if (event.section === 'identity' && event.method === 'IdentityCleared') {
-        //             logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-        //             // Loop through each of the parameters, displaying the type and data
-        //             event.data.forEach((data, index) => {
-        //                 logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
-        //                 params[types[index].type] = data.toString();
-        //             });
-        //             // We only need to emit `handleRequestJudgement` event on our own registrar.
-        //             Event.emit('handleUnRequestJudgement', params['AccountId']);
-        //         }
-        //     });
-        // });
+        setInterval(async () => {
+            try {
+                let blockHeight = await BlockCollection.getNextBlockHeight() as number;
+                if (! blockHeight) {
+                    // Retrieve the latest header
+                    const lastHeader = await this.api.rpc.chain.getHeader();
+                    blockHeight = parseInt(`${lastHeader.number}`, 10);
+                    logger.warn(`Did find processed block height, start from latest block height`);
+                    // NOTE: we support previous block height is processed.
+                    // In case of error in function call `processAtBlockHeight`, current block
+                    // will be missed.
+                    await BlockCollection.setProcessedBlockHeight(blockHeight - 1);
+                }
+                logger.info(`Current block to be processed: ${blockHeight}`);
+                await this.processAtBlockHeight(blockHeight);
+                await BlockCollection.setProcessedBlockHeight(blockHeight);
+            } catch (e) {
+                logger.error(`catch unexcepted error during process block: JSON.stringify(e)`);
+            }
+        },  1000 * 6);
     }
 
     /**
