@@ -165,8 +165,12 @@ class Chain {
             process.exit(1);
         }
 
-        await RequestJudgementCollection.setEmailVerifiedSuccessById(queriedObject._id);
-        await RequestJudgementCollection.setRiotVerifiedSuccessById(queriedObject._id);
+        if (queriedObject.emailStatus === 'pending') {
+            await RequestJudgementCollection.setEmailVerifiedSuccessById(queriedObject._id);
+        }
+        if (queriedObject.riotStatus === 'pending') {
+            await RequestJudgementCollection.setRiotVerifiedSuccessById(queriedObject._id);
+        }
         await RequestJudgementCollection.setTwitterVerifiedSuccessById(queriedObject._id);
         await sleep(90);
 
