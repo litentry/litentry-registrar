@@ -11,7 +11,7 @@ const testEmailAccount = process.env.email;
 const testRiotAccount = process.env.riot;
 const testTwitterAccount = process.env.twitter;
 
-const TIMEOUT = 3;
+const TIMEOUT = 5;
 describe('Validators', function () {
     this.timeout(20000);
 
