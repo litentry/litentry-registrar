@@ -25,6 +25,9 @@ jobs:
       NODE_ENV: staging
       GIT_CRYPT_KEY: /home/travis/litentry-registrar-git-crypt-key-default
       TARGET_DIR: /home/travis/litentry-registrar/litentry-registrar
+      TWITTER: ${{ secrets.TWITTER }}
+      RIOT: ${{ secrets.RIOT }}
+      EMAIL: ${{ secrets.EMAIL }}
     # The type of runner that the job will run on
     runs-on: self-hosted
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -36,10 +39,13 @@ jobs:
         run: |
           $GIT_CRYPT_CMD unlock $GIT_CRYPT_KEY
           echo NODE_ENV=$NODE_ENV > $TARGET_DIR/.env
+          echo email=$EMAIL >> $TARGET_DIR/.env
+          echo twitter=$TWITTER >> $TARGET_DIR/.env
+          echo riot=$RIOT >> $TARGET_DIR/.env
           yarn
           yarn build
           [[ $(pm2 list kusama-registrar | grep online | wc -l) -ne 0 ]] && pm2 stop kusama-registrar
           yarn start &> /dev/null
           sleep 5
           yarn setup
-          yarn test
+          yarn test && yarn ci

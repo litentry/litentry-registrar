@@ -4,7 +4,7 @@ import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
-import { RequestJudgementCollection } from 'app/db';
+import { RequestJudgementCollection, BlockCollection } from 'app/db';
 import logger from 'app/logger';
 import config from 'app/config';
 import { ValidatorEvent } from 'app/validator/events';
@@ -116,65 +116,26 @@ class Chain {
         }
 
         await this.connect();
-
-        logger.debug('[EventListenerStart] Starting event listener...');
-        this.unsubscribeEventListener = await this.api.query.system.events((events) => {
-            // Loop through the Vec<EventRecord>
-            events.forEach((record) => {
-                // Extract the phase, event and the event types
-                const { event, phase } = record;
-                const types = event.typeDef;
-                logger.debug(`Received event from chain: [${event.section}.${event.method}]`);
-
-                // Show what we are busy with
-                const params: {
-                    [key: string]: string;
-                } = {};
-
-                if (event.section === 'identity' && event.method === 'JudgementRequested') {
-                    logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-
-                    // Loop through each of the parameters, displaying the type and data
-                    event.data.forEach((data, index) => {
-                        logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
-                        params[types[index].type] = data.toString();
-                    });
-                    // We only need to emit `handleRequestJudgement` event on our own registrar.
-                    if (params['RegistrarIndex'] === this.config.litentry.regIndex.toString()) {
-                        Event.emit('handleRequestJudgement', params['AccountId']);
-                    } else {
-                        logger.debug(
-                            `Bypass request judgement to registrar #${params['RegistrarIndex']}, we aren't interested in it`
-                        );
-                    }
+        setInterval(async () => {
+            try {
+                let blockHeight = await BlockCollection.getNextBlockHeight() as number;
+                if (! blockHeight) {
+                    // Retrieve the latest header
+                    const lastHeader = await this.api.rpc.chain.getHeader();
+                    blockHeight = parseInt(`${lastHeader.number}`, 10);
+                    logger.warn(`Did find processed block height, start from latest block height`);
+                    // NOTE: we support previous block height is processed.
+                    // In case of error in function call `processAtBlockHeight`, current block
+                    // will be missed.
+                    await BlockCollection.setProcessedBlockHeight(blockHeight - 1);
                 }
-                // NOTE: Identity.JugementUnrequested
-                if (event.section === 'identity' && event.method === 'JudgementUnrequested') {
-                    logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-                    // Loop through each of the parameters, displaying the type and data
-                    event.data.forEach((data, index) => {
-                        logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
-                        params[types[index].type] = data.toString();
-                    });
-                    // We only need to emit `handleRequestJudgement` event on our own registrar.
-                    if (params['RegistrarIndex'] === this.config.litentry.regIndex.toString()) {
-                        Event.emit('handleUnRequestJudgement', params['AccountId']);
-                    }
-                }
-
-                // NOTE: Identity.IdentityCleared
-                if (event.section === 'identity' && event.method === 'IdentityCleared') {
-                    logger.info(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-                    // Loop through each of the parameters, displaying the type and data
-                    event.data.forEach((data, index) => {
-                        logger.info(`\t\t\t${types[index].type}: ${data.toString()}`);
-                        params[types[index].type] = data.toString();
-                    });
-                    // We only need to emit `handleRequestJudgement` event on our own registrar.
-                    Event.emit('handleUnRequestJudgement', params['AccountId']);
-                }
-            });
-        });
+                logger.info(`Current block to be processed: ${blockHeight}`);
+                await this.processAtBlockHeight(blockHeight);
+                await BlockCollection.setProcessedBlockHeight(blockHeight);
+            } catch (e) {
+                logger.error(`catch unexcepted error during process block: JSON.stringify(e)`);
+            }
+        },  1000 * 6);
     }
 
     /**
@@ -277,6 +238,41 @@ class Chain {
                 }
             });
         });
+    }
+
+    async processAtBlockHeight(blockHeight: number) {
+        const blockHash = await this.api.rpc.chain.getBlockHash(blockHeight);
+        const block = await this.api.rpc.chain.getBlock(blockHash);
+        const { extrinsics } = block.block;
+        for (let extrinsic of extrinsics) {
+            const { isSigned, meta, method: { args, method, section } } = extrinsic;
+
+            const params: {[key: string]: string} = {};
+
+            if (`${section}.${method}` === 'identity.requestJudgement') {
+                for (let [field, arg] of _.zip(meta.fields, args)) {
+                    // @ts-ignore
+                    params[`${field?.name}`] = `${arg}`;
+                }
+                if (isSigned) {
+                    params['signer'] = extrinsic.signer.toString();
+                }
+                // NOTE: Cannot deal with proxy extrinsics
+                logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
+                if (params['reg_index'] === this.config.litentry.regIndex.toString()) {
+                    Event.emit('handleRequestJudgement', params['signer']);
+                }
+            }
+            // if (`${section}.${method}` === 'identity.cancelRequest') {
+            // }
+            // if (`${section}.${method}` === 'identity.clearIdentity') {
+            //     for (let [field, arg] of _.zip(meta.fields, args)) {
+            //         // @ts-ignore
+            //         params[`${field?.name}`] = arg;
+            //     }
+            // }
+            console.log('--------------------------------------------------------------------------------');
+        }
     }
 }
 
