@@ -108,7 +108,7 @@ class Chain {
         return identityOf;
     }
 
-    async identityAddRegistrar(registrarAccount: string | AccountId | Uint8Array) {
+    async identityAddRegistrar(registrarAccount: string | Uint8Array) {
         await self.connect();
         const tx = self.api.tx.identity.addRegistrar(registrarAccount);
         console.log(`[identity.addRegistrar]: ${tx}`);
@@ -216,7 +216,7 @@ class Chain {
         return tx;
     }
 
-    async proxyProxies(account: string | Uint8Array | AccountId) {
+    async proxyProxies(account: string | Uint8Array) {
         await self.connect();
         const resp = await self.api.query.proxy.proxies(account);
         console.log(`[proxy.proxies]: ${resp}`);
@@ -225,7 +225,7 @@ class Chain {
 
     async proxyAddProxy(
         account: AddressOrPair,
-        delegateAccount: string | AccountId | Uint8Array,
+        delegateAccount: string | Uint8Array,
         proxyType = 'IdentityJudgement',
         delay = 0
     ) {
