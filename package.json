@@ -30,7 +30,7 @@
     "homepage": "https://github.com/litentry/litentry-registrar#readme",
     "dependencies": {
         "@polkadot/api": "6.5.2",
-        "@polkadot/types": "6.5.2",
+        "@polkadot/types": "6.8.1",
         "@sendgrid/mail": "^7.6.0",
         "axios": "^0.24.0",
         "chalk": "^4.1.2",
