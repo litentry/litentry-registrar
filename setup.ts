@@ -14,7 +14,6 @@ if (result.error) {
 import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import { AddressOrPair, ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { AccountId } from '@polkadot/types/interfaces/runtime';
 import { blake2AsHex } from '@polkadot/util-crypto';
 import config from 'app/config';
 import Config from 'types/config';
@@ -64,8 +63,6 @@ class Chain {
                 types: {
                     Address: 'MultiAddress',
                     LookupSource: 'MultiAddress',
-                    // Address: 'AccountId',
-                    // LookupSource: 'AccountId',
                 },
             });
         }
