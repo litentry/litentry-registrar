@@ -41,7 +41,7 @@ class MongodbStorage {
         } else {
             endpoint = `mongodb://${this.config.host}:${this.config.port}`;
         }
-        this.client = new MongoClient(endpoint);
+        this.client = new MongoClient(endpoint, {useUnifiedTopology: true});
 
         if (!this.client.isConnected()) {
             await this.client.connect();
@@ -232,6 +232,29 @@ class RiotCollection {
     }
 }
 
+class BlockCollection {
+    public readonly db: MongodbStorage;
+
+    private readonly collectionName = 'block';
+
+    constructor(db: MongodbStorage) {
+        this.db = db;
+    }
+
+    async setProcessedBlockHeight(blockHeight: number) {
+        return await this.db.update(this.collectionName, { name: 'kusama' }, { blockHeight });
+    }
+
+    async getNextBlockHeight(): Promise<number|undefined> {
+        const results = await this.db.query(this.collectionName, { name: 'kusama' });
+        return results.length > 0 ? results[0].blockHeight + 1 : undefined;
+    }
+    async reset() {
+        const _collection = this.db.database.collection(this.collectionName);
+        await _collection.deleteOne({ name: 'kusama' });
+    }
+}
+
 if (!config.mongodb) {
     throw new Error('Add configuration for mongodb.');
 }
@@ -239,7 +262,9 @@ if (!config.mongodb) {
 const storage = new MongodbStorage(config.mongodb);
 const requestJudgementCollection = new RequestJudgementCollection(storage);
 const riotCollection = new RiotCollection(storage);
+const blockCollection = new BlockCollection(storage);
 
-export { requestJudgementCollection as RequestJudgementCollection };
 export { storage as Storage };
+export { requestJudgementCollection as RequestJudgementCollection };
 export { riotCollection as RiotCollection };
+export { blockCollection as BlockCollection };
