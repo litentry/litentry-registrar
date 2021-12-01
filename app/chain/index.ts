@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { cryptoWaitReady } from '@polkadot/util-crypto';
-
+import { Extrinsic } from '@polkadot/types/interfaces';
 import { RequestJudgementCollection, BlockCollection } from 'app/db';
 import logger from 'app/logger';
 import config from 'app/config';
@@ -116,26 +116,35 @@ class Chain {
         }
 
         await this.connect();
+
         setInterval(async () => {
             try {
                 let blockHeight = await BlockCollection.getNextBlockHeight() as number;
+                // Retrieve the latest header
+                const lastHeader = await this.api.rpc.chain.getHeader();
+                const lastBlockHeight = parseInt(`${lastHeader.number}`, 10);
                 if (! blockHeight) {
-                    // Retrieve the latest header
-                    const lastHeader = await this.api.rpc.chain.getHeader();
-                    blockHeight = parseInt(`${lastHeader.number}`, 10);
+                    blockHeight = lastBlockHeight;
                     logger.warn(`Did find processed block height, start from latest block height`);
                     // NOTE: we support previous block height is processed.
                     // In case of error in function call `processAtBlockHeight`, current block
                     // will be missed.
-                    await BlockCollection.setProcessedBlockHeight(blockHeight - 1);
+                    await BlockCollection.setProcessedBlockHeight(lastBlockHeight - 1);
                 }
-                logger.info(`Current block to be processed: ${blockHeight}`);
-                await this.processAtBlockHeight(blockHeight);
-                await BlockCollection.setProcessedBlockHeight(blockHeight);
+                if (blockHeight <= lastBlockHeight) {
+                    logger.info(`Current block to be processed: ${blockHeight}`);
+                    await this.processAtBlockHeight(blockHeight,
+                                                    this.identity_requestJudgement,
+                                                    this.identity_cancelRequest,
+                                                    this.identity_clearIdentity
+                                                   );
+                    await BlockCollection.setProcessedBlockHeight(blockHeight);
+                }
             } catch (e) {
-                logger.error(`catch unexcepted error during process block: JSON.stringify(e)`);
+                console.log(e);
+                logger.error(`catch unexcepted error during process block: ${JSON.stringify(e)}`);
             }
-        },  1000 * 6);
+        },  1000 * 3);
     }
 
     /**
@@ -240,38 +249,71 @@ class Chain {
         });
     }
 
-    async processAtBlockHeight(blockHeight: number) {
+    async processAtBlockHeight(blockHeight: number, ...extrinsicClosureList: ((ex: Extrinsic, chain: Chain) => Promise<void>)[]) {
         const blockHash = await this.api.rpc.chain.getBlockHash(blockHeight);
         const block = await this.api.rpc.chain.getBlock(blockHash);
         const { extrinsics } = block.block;
         for (let extrinsic of extrinsics) {
-            const { isSigned, meta, method: { args, method, section } } = extrinsic;
-
-            const params: {[key: string]: string} = {};
-
-            if (`${section}.${method}` === 'identity.requestJudgement') {
-                for (let [field, arg] of _.zip(meta.fields, args)) {
-                    // @ts-ignore
-                    params[`${field?.name}`] = `${arg}`;
-                }
-                if (isSigned) {
-                    params['signer'] = extrinsic.signer.toString();
-                }
-                // NOTE: Cannot deal with proxy extrinsics
-                logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
-                if (params['reg_index'] === this.config.litentry.regIndex.toString()) {
-                    Event.emit('handleRequestJudgement', params['signer']);
-                }
+            for (let extrinsicClosure of extrinsicClosureList) {
+                await extrinsicClosure(extrinsic, this);
             }
-            // if (`${section}.${method}` === 'identity.cancelRequest') {
-            // }
-            // if (`${section}.${method}` === 'identity.clearIdentity') {
-            //     for (let [field, arg] of _.zip(meta.fields, args)) {
-            //         // @ts-ignore
-            //         params[`${field?.name}`] = arg;
-            //     }
-            // }
-            console.log('--------------------------------------------------------------------------------');
+        }
+    }
+
+    async identity_requestJudgement(extrinsic: Extrinsic, chain: Chain) : Promise<void> {
+        const { isSigned, meta, method: { args, method, section } } = extrinsic;
+
+        const params: {[key: string]: string} = {};
+
+        if (`${section}.${method}` === 'identity.requestJudgement') {
+            for (let [field, arg] of _.zip(meta.fields, args)) {
+                // @ts-ignore
+                params[`${field?.name}`] = `${arg}`;
+            }
+            if (isSigned) {
+                params['signer'] = extrinsic.signer.toString();
+            }
+            // NOTE: Cannot deal with proxy extrinsics
+            logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
+            if (params['reg_index'] === chain.config.litentry.regIndex.toString()) {
+                Event.emit('handleRequestJudgement', params['signer']);
+            }
+        }
+    }
+    async identity_cancelRequest(extrinsic: Extrinsic, chain: Chain) : Promise<void> {
+        const { isSigned, meta, method: { args, method, section } } = extrinsic;
+
+        const params: {[key: string]: string} = {};
+
+        if (`${section}.${method}` === 'identity.cancelJudgement') {
+            for (let [field, arg] of _.zip(meta.fields, args)) {
+                // @ts-ignore
+                params[`${field?.name}`] = `${arg}`;
+            }
+            if (isSigned) {
+                params['signer'] = extrinsic.signer.toString();
+            }
+            logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
+            if (params['reg_index'] === chain.config.litentry.regIndex.toString()) {
+                Event.emit('handleUnRequestJudgement', params['signer']);
+            }
+        }
+    }
+    async identity_clearIdentity(extrinsic: Extrinsic, chain: Chain) : Promise<void> {
+        const { isSigned, meta, method: { args, method, section } } = extrinsic;
+
+        const params: {[key: string]: string} = {};
+
+        if (`${section}.${method}` === 'identity.clearIdentity') {
+            for (let [field, arg] of _.zip(meta.fields, args)) {
+                // @ts-ignore
+                params[`${field?.name}`] = `${arg}`;
+            }
+            if (isSigned) {
+                params['signer'] = extrinsic.signer.toString();
+            }
+            logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
+            Event.emit('handleUnRequestJudgement', params['signer']);
         }
     }
 }

@@ -30,8 +30,8 @@ type Config = {
         host: string;
         port: number;
         dbName: string;
-        username: string;
-        password: string;
+        username?: string;
+        password?: string;
     };
     emailValidator: {
         apiKey: string;
