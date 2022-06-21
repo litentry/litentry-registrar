@@ -2,19 +2,21 @@
 version: 2
 updates:
   # Enable version updates for yarn
-  - package-ecosystem: "npm"
+  - package-ecosystem: 'npm'
     # Look for `package.json` and `yarn.lock` files in the `root` directory
-    directory: "/"
-    reviewers:
-      - "chenzongxiong"
+    directory: '/'
+    # reviewers:
+    #   - "chenzongxiong"
     # Check for updates every day (weekdays)
     schedule:
-      interval: "weekly"
-    # Raise pull requests for version updates against the `develop` branch
-    target-branch: "master"
+      interval: 'weekly'
+      day: 'sunday'
+      # Raise pull requests for version updates against the `develop` branch
+    target-branch: 'master'
+    open-pull-requests-limit: 5
     allow:
-    # check only direct dependencies
-      - dependency-type: "direct"
+      # check only direct dependencies
+      - dependency-type: 'direct'
     ignore:
-      - dependency-name: "mongodb"
-      - dependency-name: "@types/mongodb"
+      - dependency-name: 'mongodb'
+      - dependency-name: '@types/mongodb'
