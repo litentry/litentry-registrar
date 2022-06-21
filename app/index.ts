@@ -10,7 +10,7 @@ if (result.error) {
 
 import colors from 'colors/safe';
 import cluster from 'cluster';
-import express, {RequestHandler} from 'express';
+import express, { RequestHandler } from 'express';
 
 import Chain from 'app/chain';
 import logger from 'app/logger';
