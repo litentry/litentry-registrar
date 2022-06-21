@@ -10,18 +10,18 @@ logger.info(colors.green(`Loading config for '${process.env.NODE_ENV}' environme
 let config: Config;
 
 switch (process.env.NODE_ENV) {
-    case 'development':
-    case 'test':
-        config = development;
-        break;
-    case 'staging':
-        config = staging;
-        break;
-    case 'production':
-        config = production;
-        break;
-    default:
-        throw Error('Not an invalid environment');
+  case 'development':
+  case 'test':
+    config = development;
+    break;
+  case 'staging':
+    config = staging;
+    break;
+  case 'production':
+    config = production;
+    break;
+  default:
+    throw Error('Not an invalid environment');
 }
 
 export default config;

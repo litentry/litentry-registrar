@@ -7,25 +7,25 @@ import logger from 'app/logger';
 import config from 'app/config';
 
 export function createJwtToken(data: { iat?: number; exp?: number; [property: string]: any }) {
-    return jwt.sign(data, config.jwt.sessionSecret, {
-        noTimestamp: !data.iat,
-        expiresIn: data.exp || config.jwt.expiresIn,
-    });
+  return jwt.sign(data, config.jwt.sessionSecret, {
+    noTimestamp: !data.iat,
+    expiresIn: data.exp || config.jwt.expiresIn,
+  });
 }
 
 export function decodeJwtToken(token: string) {
-    const data = jwt.verify(token, config.jwt.sessionSecret);
-    return data;
+  const data = jwt.verify(token, config.jwt.sessionSecret);
+  return data;
 }
 
 export function generateNonce(length = 6) {
-    return crypto.randomBytes(length).toString('hex');
+  return crypto.randomBytes(length).toString('hex');
 }
 
 export async function sleep(secs: number) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, secs * 1000);
-    });
+  return new Promise((resolve) => {
+    setTimeout(resolve, secs * 1000);
+  });
 }
 
 const waitingTime = config.litentry.requestJudgementInterval * 1000 || 60 * 1000; // 60 seconds
@@ -39,22 +39,22 @@ const FunctionCache = new LRU(funcCacheSize);
  * @return (*) return the returns of throttled functions
  */
 export function throttle(funcId: string, func: (...args: any) => any): (...args: any) => Promise<any> {
-    return async function throttled(...args: any) {
-        let scheduled = FunctionCache.get(funcId) as NodeJS.Timeout;
+  return async function throttled(...args: any) {
+    let scheduled = FunctionCache.get(funcId) as NodeJS.Timeout;
 
-        if (scheduled) {
-            logger.debug(`[throttle] ${func.name} is throttled, cannot be invoked at this moment.`);
-            return;
-        }
+    if (scheduled) {
+      logger.debug(`[throttle] ${func.name} is throttled, cannot be invoked at this moment.`);
+      return;
+    }
 
-        scheduled = setTimeout(() => {
-            FunctionCache.set(funcId, undefined);
-            clearTimeout(scheduled);
-        }, waitingTime);
+    scheduled = setTimeout(() => {
+      FunctionCache.set(funcId, undefined);
+      clearTimeout(scheduled);
+    }, waitingTime);
 
-        FunctionCache.set(funcId, scheduled);
+    FunctionCache.set(funcId, scheduled);
 
-        const resp = await func.apply(throttled, args);
-        return resp;
-    };
+    const resp = await func.apply(throttled, args);
+    return resp;
+  };
 }

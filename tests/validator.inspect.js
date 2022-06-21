@@ -13,37 +13,37 @@ const testTwitterAccount = process.env.twitter;
 
 const TIMEOUT = 5;
 describe('Validators', function () {
-    this.timeout(20000);
+  this.timeout(20000);
 
-    beforeEach(async function () {
-        await RequestJudgementCollection.db.connect();
+  beforeEach(async function () {
+    await RequestJudgementCollection.db.connect();
 
-        try {
-            await RequestJudgementCollection.db.database.collection(RequestJudgementCollection.collectionName).drop();
-        } catch (error) {
-            // keep silent
-        }
-    });
+    try {
+      await RequestJudgementCollection.db.database.collection(RequestJudgementCollection.collectionName).drop();
+    } catch (error) {
+      // keep silent
+    }
+  });
 
-    it('Email/Twitter/Riot Validator', async function () {
-        let normalizedInfo = {
-            email: testEmailAccount,
-            twitter: testTwitterAccount,
-            riot: testRiotAccount,
-            nonce: 'nonce',
-        };
-        const insertedId = await RequestJudgementCollection.insert(normalizedInfo);
-        normalizedInfo['_id'] = insertedId;
-        ValidatorEvent.emit('handleEmailVerification', normalizedInfo);
-        // ValidatorEvent.emit('handleTwitterVerification', normalizedInfo);
-        ValidatorEvent.emit('handleRiotVerification', normalizedInfo);
+  it('Email/Twitter/Riot Validator', async function () {
+    let normalizedInfo = {
+      email: testEmailAccount,
+      twitter: testTwitterAccount,
+      riot: testRiotAccount,
+      nonce: 'nonce',
+    };
+    const insertedId = await RequestJudgementCollection.insert(normalizedInfo);
+    normalizedInfo['_id'] = insertedId;
+    ValidatorEvent.emit('handleEmailVerification', normalizedInfo);
+    // ValidatorEvent.emit('handleTwitterVerification', normalizedInfo);
+    ValidatorEvent.emit('handleRiotVerification', normalizedInfo);
 
-        await utils.sleep(TIMEOUT);
+    await utils.sleep(TIMEOUT);
 
-        const [queriedObject] = await RequestJudgementCollection.query({ _id: insertedId });
+    const [queriedObject] = await RequestJudgementCollection.query({ _id: insertedId });
 
-        assert.strictEqual(queriedObject.emailStatus, 'pending');
-        // assert.strictEqual(queriedObject.twitterStatus, 'pending');
-        assert.strictEqual(queriedObject.riotStatus, 'pending');
-    });
+    assert.strictEqual(queriedObject.emailStatus, 'pending');
+    // assert.strictEqual(queriedObject.twitterStatus, 'pending');
+    assert.strictEqual(queriedObject.riotStatus, 'pending');
+  });
 });
