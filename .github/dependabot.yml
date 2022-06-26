@@ -5,8 +5,6 @@ updates:
   - package-ecosystem: 'npm'
     # Look for `package.json` and `yarn.lock` files in the `root` directory
     directory: '/'
-    reviewers:
-      - 'chenzongxiong'
     # Check for updates every day (weekdays)
     schedule:
       interval: 'weekly'
