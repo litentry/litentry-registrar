@@ -110,3 +110,4 @@ data/*
 # Vim temp file
 *.swp
 tags
+git-crypt-key-for-registrar
