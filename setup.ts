@@ -187,7 +187,8 @@ class Chain {
     // @ts-ignore
     const result = await func(...args);
     const encodedProposal = result.method.toHex();
-    const tx = self.api.tx.democracy.notePreimage(encodedProposal);
+
+    const tx = self.api.tx.preimage.notePreimage(encodedProposal);
     await self.signAndSend(tx, account);
     console.log(`[democracy.notePreimage]: ${tx}`);
     return tx;
