@@ -30,7 +30,10 @@ export async function sleep(secs: number) {
 
 const waitingTime = config.litentry.requestJudgementInterval * 1000 || 60 * 1000; // 60 seconds
 const funcCacheSize = 4096;
-const FunctionCache = new LRU(funcCacheSize);
+// const FunctionCache = new LRU(funcCacheSize);
+const FunctionCache = new LRU({
+  max: funcCacheSize,
+});
 
 /**
  * Invoke a function `func` every `waitingTime`
