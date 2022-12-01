@@ -10,6 +10,7 @@ import config from 'app/config';
 import { ValidatorEvent } from 'app/validator/events';
 import { throttle, generateNonce, sleep } from 'app/utils';
 import Config from 'types/config';
+import { u8aToHex } from '@polkadot/util';
 
 const Event = new EventEmitter();
 
@@ -37,7 +38,14 @@ const Judgement: {
   [JudgementType.OutOfDate]: { [JudgementType.OutOfDate]: null },
   [JudgementType.LowQuality]: { [JudgementType.LowQuality]: null },
 };
-
+export enum JUDGEMENT_ENUM {
+  Unknown = 0,
+  FeePaid = 1,
+  Reasonable = 2,
+  KnownGood = 3,
+  OutOfDate = 4,
+  LowQuality = 5,
+}
 /**
  *
  * @property (Object) config - settings for 'chain' and 'litentry'
@@ -71,6 +79,7 @@ class Chain {
     this.wsProvider = new WsProvider(
       `${this.config.chain.protocol}://${this.config.chain.provider}:${this.config.chain.port}`
     );
+
     this.keyring = new Keyring({ type: 'sr25519' });
 
     if (this.config.litentry.useProxy && _.isEmpty(this.config.litentry.primaryAccountId)) {
@@ -103,6 +112,7 @@ class Chain {
         LookupSource: 'MultiAddress',
       },
     });
+
     return this.api;
   }
 
@@ -204,49 +214,57 @@ class Chain {
       throw new Error(`Unknown judgement type: ${judgement}, should be one of [${_.keys(Judgement)}]`);
     }
 
-    const judgement_ = Judgement[judgement];
+    //get identityHash
+    const identityInfos: any = await this.api.query.identity.identityOf(target);
+    const identityHash = identityInfos.unwrap().info.hash.toHex();
 
-    let transfer = this.api.tx.identity.provideJudgement(regIndex, target, judgement_);
+    let transfer = this.api.tx.identity.provideJudgement(regIndex, target, JUDGEMENT_ENUM[judgement], identityHash);
 
     if (this.config.litentry.useProxy) {
-      transfer = this.api.tx.proxy.proxy(this.config.litentry.primaryAccountId, 'IdentityJudgement', transfer);
+      transfer = this.api.tx.proxy.proxy(this.config.litentry.primaryAccountId, null, transfer);
     }
 
-    const { nonce } = await this.api.query.system.account(this.myself.publicKey);
+    const { nonce }: any = await this.api.query.system.account(this.myself.publicKey);
+
     const myself = this.myself;
+
     logger.debug(`Get nonce from system account: ${nonce}`);
     /* eslint-disable-next-line */
     return new Promise((resolve, reject) => {
-      transfer.signAndSend(myself, { nonce }, ({ events = [], status }) => {
-        console.log('Transaction status:', status.type);
-        if (status.isInBlock) {
-          console.log('Included at block hash', status.asInBlock.toHex());
-          console.log('Events:');
-          let error = false;
-          const resp: {
-            blockHash: string;
-            events: string[][];
-          } = { blockHash: status.asInBlock.toHex(), events: [] };
+      transfer
+        .signAndSend(myself, { nonce }, ({ events = [], status }) => {
+          console.log('Transaction status:', status.type);
+          if (status.isInBlock) {
+            console.log('Included at block hash', status.asInBlock.toHex());
+            console.log('Events:');
+            let error = false;
+            const resp: {
+              blockHash: string;
+              events: string[][];
+            } = { blockHash: status.asInBlock.toHex(), events: [] };
 
-          events.forEach(({ event: { data, method, section }, phase }) => {
-            console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
-            resp['events'].push([`${section}.${method}`, data.toString()]);
+            events.forEach(({ event: { data, method, section }, phase }) => {
+              console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
+              resp['events'].push([`${section}.${method}`, data.toString()]);
 
-            if (data && data.length > 0) {
-              for (let d of data) {
-                if ((d.toJSON() as { asModule?: { error?: boolean } })?.asModule?.error) {
-                  error = true;
+              if (data && data.length > 0) {
+                for (let d of data) {
+                  if ((d.toJSON() as { asModule?: { error?: boolean } })?.asModule?.error) {
+                    error = true;
+                  }
                 }
               }
+            });
+            if (error) {
+              reject(resp);
+            } else {
+              resolve(resp);
             }
-          });
-          if (error) {
-            reject(resp);
-          } else {
-            resolve(resp);
           }
-        }
-      });
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     });
   }
 
