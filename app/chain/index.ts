@@ -10,7 +10,6 @@ import config from 'app/config';
 import { ValidatorEvent } from 'app/validator/events';
 import { throttle, generateNonce, sleep } from 'app/utils';
 import Config from 'types/config';
-import { u8aToHex } from '@polkadot/util';
 
 const Event = new EventEmitter();
 
@@ -130,9 +129,11 @@ class Chain {
     setInterval(async () => {
       try {
         let blockHeight = (await BlockCollection.getNextBlockHeight()) as number;
+
         // Retrieve the latest header
         const lastHeader = await this.api.rpc.chain.getHeader();
         const lastBlockHeight = parseInt(`${lastHeader.number}`, 10);
+
         if (!blockHeight) {
           blockHeight = lastBlockHeight;
           logger.warn(`Did find processed block height, start from latest block height`);
@@ -274,7 +275,9 @@ class Chain {
   ) {
     const blockHash = await this.api.rpc.chain.getBlockHash(blockHeight);
     const block = await this.api.rpc.chain.getBlock(blockHash);
+
     const { extrinsics } = block.block;
+
     for (let extrinsic of extrinsics) {
       for (let extrinsicClosure of extrinsicClosureList) {
         await extrinsicClosure(extrinsic, this);
@@ -290,6 +293,7 @@ class Chain {
     } = extrinsic;
 
     const params: { [key: string]: string } = {};
+    console.log(`${section}.${method}`);
 
     if (`${section}.${method}` === 'identity.requestJudgement') {
       for (let [field, arg] of _.zip(meta.fields, args)) {
@@ -302,7 +306,7 @@ class Chain {
       // NOTE: Cannot deal with proxy extrinsics
       logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
       if (params['reg_index'] === chain.config.litentry.regIndex.toString()) {
-        Event.emit('handleRequestJudgement', params['signer']);
+        Event.emit('JudgementRequested', params['signer']);
       }
     }
   }
@@ -440,11 +444,11 @@ async function handleRequestJudgement(accountID: string) {
  * Event handler for requesting a judgement by clients
  * @param {String} accountID - the accountID to be judged by our platform
  */
-Event.on('handleRequestJudgement', async (accountID) => {
+
+Event.on('JudgementRequested', async (accountID) => {
   const func = throttle(`handlRequestJudgement:${accountID}`, handleRequestJudgement);
   return await func(accountID);
 });
-
 async function handleUnRequestJudgement(accountID: string) {
   try {
     logger.debug(`[Event] HandleUnRequestJudgement: ${accountID}`);
