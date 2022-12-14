@@ -53,6 +53,20 @@ app.get('/verify-email', async (req, res) => {
   );
 });
 
+app.get('/query', async (req, res) => {
+  const { account } = req.query;
+  if (account) {
+    const results = await RequestJudgementCollection.query({
+      account: account,
+    });
+    res.send(results[0]);
+  } else {
+    res.send({
+      status: 'fail',
+      msg: 'account is required',
+    });
+  }
+});
 app.get('/email-verification', async (req, res) => {
   try {
     const { token } = req.query;
