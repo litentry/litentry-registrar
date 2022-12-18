@@ -329,7 +329,7 @@ class Chain {
       }
       logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
       if (params['reg_index'] === chain.config.litentry.regIndex.toString()) {
-        Event.emit('handleUnRequestJudgement', params['signer']);
+        Event.emit('JudgementUnrequested', params['signer']);
       }
     }
   }
@@ -351,7 +351,7 @@ class Chain {
         params['signer'] = extrinsic.signer.toString();
       }
       logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
-      Event.emit('handleUnRequestJudgement', params['signer']);
+      Event.emit('JudgementUnrequested', params['signer']);
     }
   }
 }
@@ -463,7 +463,7 @@ async function handleUnRequestJudgement(accountID: string) {
  * Event handler for cancel a request judgement
  * @param {String} accountID - the accountID to be cancelled by our platform
  */
-Event.on('handleUnRequestJudgement', async (accountID: string) => {
+Event.on('JudgementUnrequested', async (accountID: string) => {
   const func = throttle(`handleUnRequestJudgement:${accountID}`, handleUnRequestJudgement);
   return await func(accountID);
 });

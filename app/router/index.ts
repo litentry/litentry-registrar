@@ -55,10 +55,14 @@ app.get('/verify-email', async (req, res) => {
 
 app.get('/query', async (req, res) => {
   const { account } = req.query;
+  console.log('account', account);
+
   if (account) {
     const results = await RequestJudgementCollection.query({
       account: account,
     });
+    console.log(2223344, results);
+
     res.send(results[0]);
   } else {
     res.send({

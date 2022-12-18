@@ -57,6 +57,7 @@ export default async function job() {
       }
       try {
         const resp = await Chain.provideJudgement(target, judgement);
+
         await RequestJudgementCollection.updateById(request._id, { details: resp, status: 'verifiedSuccess' });
       } catch (e) {
         logger.error(`Error occurs during providing judgement: ${new String(e)}`);
