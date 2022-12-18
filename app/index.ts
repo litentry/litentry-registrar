@@ -1,7 +1,7 @@
 // Ensure the NODE_ENV is loaded from .env
 delete process.env.NODE_ENV;
 import dotenv from 'dotenv';
-
+const cors = require('cors');
 const result = dotenv.config({ debug: true });
 
 if (result.error) {
@@ -67,6 +67,7 @@ if (cluster.isMaster) {
 
   app.use(express.json() as RequestHandler);
   app.use(
+    cors(),
     express.urlencoded({
       extended: true,
     }) as RequestHandler
