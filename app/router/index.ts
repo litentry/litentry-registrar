@@ -61,9 +61,12 @@ app.get('/query', async (req, res) => {
     const results = await RequestJudgementCollection.query({
       account: account,
     });
-    console.log(2223344, results);
 
-    res.send(results[0]);
+    if (results.length) {
+      res.send(results[results.length - 1]);
+    } else {
+      res.send({});
+    }
   } else {
     res.send({
       status: 'fail',
