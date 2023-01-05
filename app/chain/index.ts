@@ -37,14 +37,7 @@ const Judgement: {
   [JudgementType.OutOfDate]: { [JudgementType.OutOfDate]: null },
   [JudgementType.LowQuality]: { [JudgementType.LowQuality]: null },
 };
-export enum JUDGEMENT_ENUM {
-  Unknown = 0,
-  FeePaid = 1,
-  Reasonable = 2,
-  KnownGood = 3,
-  OutOfDate = 4,
-  LowQuality = 5,
-}
+
 /**
  *
  * @property (Object) config - settings for 'chain' and 'litentry'
@@ -78,7 +71,6 @@ class Chain {
     this.wsProvider = new WsProvider(
       `${this.config.chain.protocol}://${this.config.chain.provider}:${this.config.chain.port}`
     );
-
     this.keyring = new Keyring({ type: 'sr25519' });
 
     if (this.config.litentry.useProxy && _.isEmpty(this.config.litentry.primaryAccountId)) {
@@ -111,7 +103,6 @@ class Chain {
         LookupSource: 'MultiAddress',
       },
     });
-
     return this.api;
   }
 
@@ -129,11 +120,9 @@ class Chain {
     setInterval(async () => {
       try {
         let blockHeight = (await BlockCollection.getNextBlockHeight()) as number;
-
         // Retrieve the latest header
         const lastHeader = await this.api.rpc.chain.getHeader();
         const lastBlockHeight = parseInt(`${lastHeader.number}`, 10);
-
         if (!blockHeight) {
           blockHeight = lastBlockHeight;
           logger.warn(`Did find processed block height, start from latest block height`);
@@ -215,57 +204,49 @@ class Chain {
       throw new Error(`Unknown judgement type: ${judgement}, should be one of [${_.keys(Judgement)}]`);
     }
 
-    //get identityHash
-    const identityInfos: any = await this.api.query.identity.identityOf(target);
-    const identityHash = identityInfos.unwrap().info.hash.toHex();
+    const judgement_ = Judgement[judgement];
 
-    let transfer = this.api.tx.identity.provideJudgement(regIndex, target, JUDGEMENT_ENUM[judgement], identityHash);
+    let transfer = this.api.tx.identity.provideJudgement(regIndex, target, judgement_);
 
     if (this.config.litentry.useProxy) {
-      transfer = this.api.tx.proxy.proxy(this.config.litentry.primaryAccountId, null, transfer);
+      transfer = this.api.tx.proxy.proxy(this.config.litentry.primaryAccountId, 'IdentityJudgement', transfer);
     }
 
-    const { nonce }: any = await this.api.query.system.account(this.myself.publicKey);
-
+    const { nonce } = await this.api.query.system.account(this.myself.publicKey);
     const myself = this.myself;
-
     logger.debug(`Get nonce from system account: ${nonce}`);
     /* eslint-disable-next-line */
     return new Promise((resolve, reject) => {
-      transfer
-        .signAndSend(myself, { nonce }, ({ events = [], status }) => {
-          console.log('Transaction status:', status.type);
-          if (status.isInBlock) {
-            console.log('Included at block hash', status.asInBlock.toHex());
-            console.log('Events:');
-            let error = false;
-            const resp: {
-              blockHash: string;
-              events: string[][];
-            } = { blockHash: status.asInBlock.toHex(), events: [] };
+      transfer.signAndSend(myself, { nonce }, ({ events = [], status }) => {
+        console.log('Transaction status:', status.type);
+        if (status.isInBlock) {
+          console.log('Included at block hash', status.asInBlock.toHex());
+          console.log('Events:');
+          let error = false;
+          const resp: {
+            blockHash: string;
+            events: string[][];
+          } = { blockHash: status.asInBlock.toHex(), events: [] };
 
-            events.forEach(({ event: { data, method, section }, phase }) => {
-              console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
-              resp['events'].push([`${section}.${method}`, data.toString()]);
+          events.forEach(({ event: { data, method, section }, phase }) => {
+            console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
+            resp['events'].push([`${section}.${method}`, data.toString()]);
 
-              if (data && data.length > 0) {
-                for (let d of data) {
-                  if ((d.toJSON() as { asModule?: { error?: boolean } })?.asModule?.error) {
-                    error = true;
-                  }
+            if (data && data.length > 0) {
+              for (let d of data) {
+                if ((d.toJSON() as { asModule?: { error?: boolean } })?.asModule?.error) {
+                  error = true;
                 }
               }
-            });
-            if (error) {
-              reject(resp);
-            } else {
-              resolve(resp);
             }
+          });
+          if (error) {
+            reject(resp);
+          } else {
+            resolve(resp);
           }
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+        }
+      });
     });
   }
 
@@ -275,9 +256,7 @@ class Chain {
   ) {
     const blockHash = await this.api.rpc.chain.getBlockHash(blockHeight);
     const block = await this.api.rpc.chain.getBlock(blockHash);
-
     const { extrinsics } = block.block;
-
     for (let extrinsic of extrinsics) {
       for (let extrinsicClosure of extrinsicClosureList) {
         await extrinsicClosure(extrinsic, this);
@@ -293,7 +272,6 @@ class Chain {
     } = extrinsic;
 
     const params: { [key: string]: string } = {};
-    console.log(`${section}.${method}`);
 
     if (`${section}.${method}` === 'identity.requestJudgement') {
       for (let [field, arg] of _.zip(meta.fields, args)) {
@@ -306,7 +284,7 @@ class Chain {
       // NOTE: Cannot deal with proxy extrinsics
       logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
       if (params['reg_index'] === chain.config.litentry.regIndex.toString()) {
-        Event.emit('JudgementRequested', params['signer']);
+        Event.emit('handleRequestJudgement', params['signer']);
       }
     }
   }
@@ -329,7 +307,7 @@ class Chain {
       }
       logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
       if (params['reg_index'] === chain.config.litentry.regIndex.toString()) {
-        Event.emit('JudgementUnrequested', params['signer']);
+        Event.emit('handleUnRequestJudgement', params['signer']);
       }
     }
   }
@@ -351,7 +329,7 @@ class Chain {
         params['signer'] = extrinsic.signer.toString();
       }
       logger.info(`${section}${method}, params is ${JSON.stringify(params)}.`);
-      Event.emit('JudgementUnrequested', params['signer']);
+      Event.emit('handleUnRequestJudgement', params['signer']);
     }
   }
 }
@@ -444,11 +422,11 @@ async function handleRequestJudgement(accountID: string) {
  * Event handler for requesting a judgement by clients
  * @param {String} accountID - the accountID to be judged by our platform
  */
-
-Event.on('JudgementRequested', async (accountID) => {
+Event.on('handleRequestJudgement', async (accountID) => {
   const func = throttle(`handlRequestJudgement:${accountID}`, handleRequestJudgement);
   return await func(accountID);
 });
+
 async function handleUnRequestJudgement(accountID: string) {
   try {
     logger.debug(`[Event] HandleUnRequestJudgement: ${accountID}`);
@@ -463,7 +441,7 @@ async function handleUnRequestJudgement(accountID: string) {
  * Event handler for cancel a request judgement
  * @param {String} accountID - the accountID to be cancelled by our platform
  */
-Event.on('JudgementUnrequested', async (accountID: string) => {
+Event.on('handleUnRequestJudgement', async (accountID: string) => {
   const func = throttle(`handleUnRequestJudgement:${accountID}`, handleUnRequestJudgement);
   return await func(accountID);
 });
