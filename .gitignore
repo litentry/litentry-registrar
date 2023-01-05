@@ -110,3 +110,7 @@ data/*
 # Vim temp file
 *.swp
 tags
+.DS_Store
+
+#key for registrar
+git-crypt-key-for-registrar

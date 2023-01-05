@@ -30,7 +30,7 @@ class MongodbStorage {
    */
   async connect() {
     if (this.client) {
-      logger.debug(`[MongodbStorage.connect] storage is already connected.`);
+      // logger.debug(`[MongodbStorage.connect] storage is already connected.`);
       return;
     }
 
@@ -117,7 +117,7 @@ class MongodbStorage {
     const updateDoc = { $set: { ...content, updatedAt: new Date() } };
     const _collection = this.database.collection(collection);
     const result = await _collection.updateOne(filter, updateDoc, options);
-    logger.debug(`[MongodbStorage.update] update ${result.modifiedCount} document into ${collection}`);
+    // logger.debug(`[MongodbStorage.update] update ${result.modifiedCount} document into ${collection}`);
   }
 
   async updateById(collection: string, id: string, content: object) {
@@ -209,7 +209,7 @@ class RequestJudgementCollection {
       { account: account, $and: [{ status: { $ne: 'verifiedSuccess' } }, { status: { $ne: 'cancelled' } }] },
       { $set: { status: 'cancelled' } }
     );
-    logger.debug(`[MongodbStorage.update] update ${results.modifiedCount} document into ${this.collectionName}`);
+    // logger.debug(`[MongodbStorage.update] update ${results.modifiedCount} document into ${this.collectionName}`);
   }
 }
 
