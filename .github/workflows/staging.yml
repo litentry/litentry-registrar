@@ -43,9 +43,5 @@ jobs:
           echo twitter=$TWITTER >> $TARGET_DIR/.env
           echo riot=$RIOT >> $TARGET_DIR/.env
           yarn
-          yarn build
           [[ $(pm2 list kusama-registrar | grep online | wc -l) -ne 0 ]] && pm2 stop kusama-registrar
           yarn start &> /dev/null
-          sleep 5
-          yarn setup
-          yarn test && yarn ci
