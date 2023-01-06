@@ -216,6 +216,7 @@ class Chain {
     }
 
     //get identityHash
+
     const identityInfos: any = await this.api.query.identity.identityOf(target);
     const identityHash = identityInfos.unwrap().info.hash.toHex();
 
@@ -319,7 +320,7 @@ class Chain {
 
     const params: { [key: string]: string } = {};
 
-    if (`${section}.${method}` === 'identity.cancelJudgement') {
+    if (`${section}.${method}` === 'identity.cancelRequest') {
       for (let [field, arg] of _.zip(meta.fields, args)) {
         // @ts-ignore
         params[`${field?.name}`] = `${arg}`;
@@ -369,6 +370,7 @@ async function handleRequestJudgement(accountID: string) {
   }
   logger.debug(`[Event] HandleRequestJudgement: ${accountID}`);
   let identity = await chain.api.query.identity.identityOf(accountID);
+
   try {
     const { info } = JSON.parse(identity.toString());
     logger.debug(`[Event] originalInfo: ${JSON.stringify(info)}`);
@@ -464,6 +466,8 @@ async function handleUnRequestJudgement(accountID: string) {
  * @param {String} accountID - the accountID to be cancelled by our platform
  */
 Event.on('JudgementUnrequested', async (accountID: string) => {
+  console.log('JudgementUnrequested', accountID);
+
   const func = throttle(`handleUnRequestJudgement:${accountID}`, handleUnRequestJudgement);
   return await func(accountID);
 });
