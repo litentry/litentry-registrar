@@ -5,7 +5,7 @@ import logger from 'app/logger';
 import { ElementValidator, EmailValidator, TwitterValidator } from 'app/validator';
 import Chain from 'app/chain';
 import { decodeJwtToken } from 'app/utils';
-import { RequestJudgementCollection, RiotCollection } from 'app/db';
+import { BlockCollection, RequestJudgementCollection, RiotCollection } from 'app/db';
 import config from 'app/config';
 import { renderVerifyIdentityItemPage, renderVerificationResultPage } from 'app/pages';
 
@@ -73,6 +73,15 @@ app.get('/query', async (req, res) => {
       msg: 'account is required',
     });
   }
+});
+app.get('/blockInfo', async (req, res) => {
+  let blockHeight = (await BlockCollection.getNextBlockHeight()) as number;
+  let header = await Chain.api.rpc.chain.getHeader();
+  let blockNumber = header.number.toNumber();
+  res.send({
+    dbNumber: blockHeight,
+    blockNumber,
+  });
 });
 app.get('/email-verification', async (req, res) => {
   try {
