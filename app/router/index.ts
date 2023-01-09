@@ -77,7 +77,7 @@ app.get('/query', async (req, res) => {
 app.get('/blockInfo', async (req, res) => {
   let blockHeight = (await BlockCollection.getNextBlockHeight()) as number;
   let header = await Chain.api.rpc.chain.getHeader();
-  let blockNumber = header.number.toNumber();
+  let blockNumber = header.number.toNumber() - 1;
   res.send({
     dbNumber: blockHeight,
     blockNumber,
