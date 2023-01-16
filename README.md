@@ -40,4 +40,4 @@ wss://testnet.litentry.io
 
 
 ## How to Verify Your Identity
-If you meet any problems during identity verification, please follow the instruction given in the link [https://docs.litentry.com/registrar/HowToVerifyYourIdentity.html](https://docs.litentry.com/registrar/HowToVerifyYourIdentity.html)
+If you meet any problems during identity verification, please follow the instruction given in the link [https://docs.litentry.com/parachain/how-to-guides/litentry-kusama-registrar-guide](https://docs.litentry.com/parachain/how-to-guides/litentry-kusama-registrar-guide)
