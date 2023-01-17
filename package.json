@@ -40,7 +40,7 @@
     "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.20",
     "lru-cache": "^7.10.2",
-    "matrix-js-sdk": "^15.1.1",
+    "matrix-js-sdk": "^19.7.0",
     "mongodb": "^3.6.10",
     "twitter-api-client": "^1.5.2",
     "twitter-api-v2": "^1.12.9",
