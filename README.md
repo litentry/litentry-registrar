@@ -30,14 +30,8 @@ Litentry Polkadot/Kusama Registrar
 npm start
 ```
 
-
 Please make sure `pm2` is contronlled by system-level process, like `systemd`.
 
-## Chain Address
-```
-wss://testnet.litentry.io
-```
-
-
 ## How to Verify Your Identity
+
 If you meet any problems during identity verification, please follow the instruction given in the link [https://docs.litentry.com/registrar/HowToVerifyYourIdentity.html](https://docs.litentry.com/registrar/HowToVerifyYourIdentity.html)
