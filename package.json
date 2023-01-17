@@ -43,7 +43,7 @@
     "matrix-js-sdk": "^15.1.1",
     "mongodb": "^3.6.10",
     "twitter-api-client": "^1.5.2",
-    "twitter-api-v2": "^1.12.9",
+    "twitter-api-v2": "^1.14.0",
     "uuid": "^8.3.1",
     "winston": "^3.8.0",
     "winston-daily-rotate-file": "^4.5.0"
