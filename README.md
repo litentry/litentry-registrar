@@ -1,7 +1,5 @@
 # litentry-registrar
 
-![staging](https://github.com/litentry/litentry-registrar/workflows/staging/badge.svg)
-
 Litentry Polkadot/Kusama Registrar
 
 ## Getting started locally
@@ -35,7 +33,7 @@ Please make sure `pm2` is contronlled by system-level process, like `systemd`.
 
 ## Chain Address
 ```
-wss://testnet.litentry.io
+wss://kusama-rpc.polkadot.io
 ```
 
 
