@@ -5545,10 +5545,10 @@ twitter-api-client@^1.5.2:
     oauth "^0.9.15"
     object-sizeof "^1.6.1"
 
-twitter-api-v2@^1.12.9:
-  version "1.12.9"
-  resolved "https://registry.yarnpkg.com/twitter-api-v2/-/twitter-api-v2-1.12.9.tgz#447fc4efb693bbb7983a6dcec2de5da7e0f27648"
-  integrity sha512-nmKwcUiXgoEfcOtAH/hYojy0oSxbouWvvNsHVphiHSW9x9aus2Jdg9/NRB2Gzyq5G6xl+EkjUlEWwBQjp1FOfg==
+twitter-api-v2@^1.14.0:
+  version "1.14.0"
+  resolved "https://registry.yarnpkg.com/twitter-api-v2/-/twitter-api-v2-1.14.0.tgz#2aa186087aae58083dcbbafef8727b42cb703483"
+  integrity sha512-kBc0X6hTl0qWYTSNH9Gp87S6d9wIM2qOxHg7jlWH054HnMPC8XMcttsrKyPwP8SVha28dt5DPQvlqhPxsWRC+Q==
 
 tx2@~1.0.4:
   version "1.0.5"
